@@ -1,53 +1,71 @@
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* Light Theme (default) */
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --cell-bg: #f3f3f3;
+  --cell-border: #d3d6da;
+  --key-bg: #d3d6da;
+  --correct-bg: #6aaa64;
+  --present-bg: #c9b458;
+  --absent-bg: #787c7e;
 
+  /* Typography */
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  /* Spacing & Layout */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Shadows */
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Transitions */
+  --transition: all 0.2s ease;
+
+  font: 16px/1.5 var(--sans);
   color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--text-color);
+  background: var(--bg-color);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+/* Dark Theme */
+:root.dark {
+  --bg-color: #121213;
+  --text-color: #ffffff;
+  --cell-bg: #1a1a1a;
+  --cell-border: #3a3a3c;
+  --key-bg: #3a3a3c;
+  --correct-bg: #6aaa64;
+  --present-bg: #c9b458;
+  --absent-bg: #565758;
+}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
+/* Colorblind Theme */
+:root.colorblind {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --cell-bg: #f3f3f3;
+  --cell-border: #d3d6da;
+  --key-bg: #d3d6da;
+  --correct-bg: #0066cc;
+  --present-bg: #ff6600;
+  --absent-bg: #787c7e;
+}
 }
 
 #root {
