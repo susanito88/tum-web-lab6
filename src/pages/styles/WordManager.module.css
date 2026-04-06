@@ -23,6 +23,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   transition: var(--transition);
+  flex-shrink: 0;
 }
 
 .backButton:hover {
@@ -33,10 +34,172 @@
   flex: 1;
   text-align: center;
   margin: 0;
+  font-size: 24px;
 }
 
 .main {
   flex: 1;
   overflow-y: auto;
   padding: var(--spacing-lg);
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.categoryTabs {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+.tab {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--cell-bg);
+  border: 2px solid var(--cell-border);
+  border-radius: var(--radius-md);
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.tab:hover {
+  border-color: var(--present-bg);
+}
+
+.tab.active {
+  background-color: var(--correct-bg);
+  border-color: var(--correct-bg);
+  color: white;
+}
+
+.addForm {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.input,
+.searchInput {
+  flex: 1;
+  padding: var(--spacing-md);
+  border: 2px solid var(--cell-border);
+  border-radius: var(--radius-md);
+  background-color: var(--cell-bg);
+  color: var(--text-color);
+  font-size: 16px;
+  text-transform: uppercase;
+  transition: var(--transition);
+}
+
+.input:focus,
+.searchInput:focus {
+  outline: none;
+  border-color: var(--correct-bg);
+}
+
+.addButton {
+  padding: var(--spacing-md) var(--spacing-lg);
+  background-color: var(--correct-bg);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.addButton:hover {
+  opacity: 0.9;
+}
+
+.message {
+  padding: var(--spacing-md);
+  background-color: var(--cell-bg);
+  border: 2px solid var(--cell-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+  text-align: center;
+  font-weight: 600;
+}
+
+.searchBox {
+  margin-bottom: var(--spacing-lg);
+}
+
+.section {
+  margin-bottom: var(--spacing-lg);
+}
+
+.section h2 {
+  margin-bottom: var(--spacing-md);
+  font-size: 18px;
+}
+
+.wordsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--spacing-md);
+}
+
+.wordCard {
+  padding: var(--spacing-md);
+  background-color: var(--cell-bg);
+  border: 2px solid var(--cell-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  transition: var(--transition);
+}
+
+.wordCard:hover {
+  border-color: var(--present-bg);
+  transform: translateY(-2px);
+}
+
+.wordText {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.wordActions {
+  display: flex;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.likeButton,
+.deleteButton {
+  flex: 1;
+  padding: var(--spacing-sm);
+  background-color: transparent;
+  border: 1px solid var(--cell-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 16px;
+  transition: var(--transition);
+}
+
+.likeButton:hover {
+  background-color: var(--present-bg);
+  border-color: var(--present-bg);
+}
+
+.deleteButton:hover {
+  background-color: var(--absent-bg);
+  border-color: var(--absent-bg);
+  color: white;
+}
+
+.emptyState {
+  text-align: center;
+  padding: var(--spacing-xl);
+  background-color: var(--cell-bg);
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--cell-border);
 }
