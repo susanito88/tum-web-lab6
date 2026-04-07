@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: var(--bg-color);
+  background: transparent;
   color: var(--text-color);
 }
 
@@ -12,11 +12,13 @@
   align-items: center;
   padding: var(--spacing-lg);
   border-bottom: 1px solid var(--cell-border);
+  background: color-mix(in srgb, var(--cell-bg) 84%, transparent);
+  backdrop-filter: blur(6px);
 }
 
 .backButton {
-  background: none;
-  border: none;
+  background: var(--cell-bg);
+  border: 1px solid var(--cell-border);
   font-size: 16px;
   cursor: pointer;
   color: var(--text-color);
@@ -27,7 +29,8 @@
 }
 
 .backButton:hover {
-  background-color: var(--cell-bg);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
 }
 
 .header h1 {
@@ -56,7 +59,7 @@
 .tab {
   padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--cell-bg);
-  border: 2px solid var(--cell-border);
+  border: 1px solid var(--cell-border);
   border-radius: var(--radius-md);
   color: var(--text-color);
   cursor: pointer;
@@ -84,7 +87,7 @@
 .searchInput {
   flex: 1;
   padding: var(--spacing-md);
-  border: 2px solid var(--cell-border);
+  border: 1px solid var(--cell-border);
   border-radius: var(--radius-md);
   background-color: var(--cell-bg);
   color: var(--text-color);
@@ -101,7 +104,7 @@
 
 .addButton {
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--correct-bg);
+  background: linear-gradient(135deg, var(--correct-bg), #7dc578);
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -111,13 +114,15 @@
 }
 
 .addButton:hover {
-  opacity: 0.9;
+  opacity: 0.95;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
 }
 
 .message {
   padding: var(--spacing-md);
   background-color: var(--cell-bg);
-  border: 2px solid var(--cell-border);
+  border: 1px solid var(--cell-border);
   border-radius: var(--radius-md);
   margin-bottom: var(--spacing-lg);
   text-align: center;
@@ -146,7 +151,7 @@
 .wordCard {
   padding: var(--spacing-md);
   background-color: var(--cell-bg);
-  border: 2px solid var(--cell-border);
+  border: 1px solid var(--cell-border);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
@@ -154,11 +159,12 @@
   justify-content: space-between;
   gap: var(--spacing-sm);
   transition: var(--transition);
+  box-shadow: var(--shadow);
 }
 
 .wordCard:hover {
   border-color: var(--present-bg);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
 .wordText {

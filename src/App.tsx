@@ -23,7 +23,7 @@ function AppContent() {
 }
 
 function App() {
-  const { theme } = useTheme();
+  useTheme();
 
   useEffect(() => {
     // Initialize databases

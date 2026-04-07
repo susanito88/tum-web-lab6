@@ -1,4 +1,4 @@
-import { Guess, LetterResult } from "@/types";
+import type { Guess, LetterResult } from "@/types";
 
 // Word validation
 export function isValidWord(word: string): boolean {
