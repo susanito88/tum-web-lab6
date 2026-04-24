@@ -15,6 +15,36 @@ const KEY_SALT = "wordle-client-dictionary-salt-v1";
 type StoredWord = Omit<Word, "word"> & { word: string };
 let encryptionKeyPromise: Promise<CryptoKey> | null = null;
 
+function normalizeCategory(
+  category: string | undefined,
+): Word["category"] | null {
+  if (!category) return null;
+
+  const normalized = category.trim().toLowerCase();
+  if (normalized === "easy") return "Easy";
+  if (normalized === "medium") return "Medium";
+  if (normalized === "hard") return "Hard";
+  if (normalized === "extreme") return "Extreme";
+  return null;
+}
+
+function inferCategoryFromId(id: string | undefined): Word["category"] | null {
+  if (!id) return null;
+
+  if (id.startsWith("easy-")) return "Easy";
+  if (id.startsWith("medium-")) return "Medium";
+  if (id.startsWith("hard-")) return "Hard";
+  if (id.startsWith("extreme-")) return "Extreme";
+  return null;
+}
+
+function resolveCategory(
+  category: string | undefined,
+  id: string | undefined,
+): Word["category"] | null {
+  return normalizeCategory(category) ?? inferCategoryFromId(id);
+}
+
 function toBase64(bytes: Uint8Array): string {
   let binary = "";
   for (const b of bytes) {
@@ -156,11 +186,27 @@ async function migrateWordsToEncryption(): Promise<void> {
 
   while (cursor) {
     const value = cursor.value as StoredWord;
+    let needsUpdate = false;
+
     if (value?.word && !isEncryptedWord(value.word)) {
       const plainWord = await decryptWord(value.word);
       value.word = await encryptWord(plainWord);
+      needsUpdate = true;
+    }
+
+    const normalizedCategory = resolveCategory(
+      value?.category as string,
+      value?.id,
+    );
+    if (normalizedCategory && value.category !== normalizedCategory) {
+      value.category = normalizedCategory;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
       await cursor.update(value);
     }
+
     cursor = await cursor.continue();
   }
 
@@ -573,12 +619,13 @@ async function ensureDefaultWords(): Promise<void> {
 
   const tx = db.transaction("words", "readwrite");
   const now = Date.now();
+  let changedAny = false;
 
   for (const [category, words] of Object.entries(DEFAULT_WORDS)) {
     for (const plainWord of words) {
       const normalizedWord = plainWord.toUpperCase();
       const id = `${category.toLowerCase()}-${normalizedWord.toLowerCase()}`;
-      const existing = await tx.store.get(id);
+      const existing = (await tx.store.get(id)) as StoredWord | undefined;
       if (!existing) {
         const wordObj: StoredWord = {
           id,
@@ -590,11 +637,41 @@ async function ensureDefaultWords(): Promise<void> {
           isCustom: false,
         };
         await tx.store.put(wordObj);
+        changedAny = true;
+      } else {
+        let needsUpdate = false;
+        const resolvedCategory = resolveCategory(
+          existing.category as string,
+          existing.id,
+        );
+
+        if (resolvedCategory !== category) {
+          existing.category = category as Word["category"];
+          needsUpdate = true;
+        }
+
+        if (existing.length !== normalizedWord.length) {
+          existing.length = normalizedWord.length;
+          needsUpdate = true;
+        }
+
+        if (existing.isCustom) {
+          existing.isCustom = false;
+          needsUpdate = true;
+        }
+
+        if (needsUpdate) {
+          await tx.store.put(existing);
+          changedAny = true;
+        }
       }
     }
   }
 
   await tx.done;
+  if (changedAny) {
+    dictionaryCache = null;
+  }
 }
 
 export async function addWord(
@@ -638,11 +715,40 @@ export async function getWordsByCategory(
   if (!db) await initWordsDB();
   if (!db) throw new Error("Failed to initialize DB");
 
-  const allWords = (await db.getAllFromIndex(
-    "words",
-    "by-category",
-    category,
-  )) as StoredWord[];
+  let allWords: StoredWord[] = [];
+
+  try {
+    allWords = (await db.getAllFromIndex(
+      "words",
+      "by-category",
+      category,
+    )) as StoredWord[];
+  } catch {
+    const fallbackWords = (await db.getAll("words")) as StoredWord[];
+    allWords = fallbackWords.filter((w) => {
+      const normalizedCategory = resolveCategory(w.category as string, w.id);
+      return normalizedCategory === category;
+    });
+  }
+
+  // Recover if defaults were removed or storage got cleared while the app was open.
+  if (allWords.length === 0) {
+    await ensureDefaultWords();
+    try {
+      allWords = (await db.getAllFromIndex(
+        "words",
+        "by-category",
+        category,
+      )) as StoredWord[];
+    } catch {
+      const fallbackWords = (await db.getAll("words")) as StoredWord[];
+      allWords = fallbackWords.filter((w) => {
+        const normalizedCategory = resolveCategory(w.category as string, w.id);
+        return normalizedCategory === category;
+      });
+    }
+  }
+
   return Promise.all(allWords.map(toPublicWord));
 }
 

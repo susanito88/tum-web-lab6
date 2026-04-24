@@ -91,7 +91,11 @@ export function GameComponent() {
       setTimeout(() => setMessage(""), 1400);
     }
 
-    const result = evaluateGuess(normalizedGuess, word.word);
+    const evaluatedResult = evaluateGuess(normalizedGuess, word.word);
+    const result =
+      mode === "hardcore"
+        ? evaluatedResult.map((r) => (r === "absent" ? "absent" : "present"))
+        : evaluatedResult;
     const newGuesses = [...guesses, { word: normalizedGuess, result }];
     setGuesses(newGuesses);
     setCurrentGuess("");
