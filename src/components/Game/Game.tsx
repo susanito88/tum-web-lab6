@@ -84,11 +84,12 @@ export function GameComponent() {
       return;
     }
 
-    // Soft dictionary check for user feedback; unknown words are still allowed.
+    // Strict dictionary check: unknown words are rejected.
     const existsInDictionary = await isWordInDictionary(normalizedGuess);
     if (!existsInDictionary) {
-      setMessage("Word not in dictionary, but accepted");
-      setTimeout(() => setMessage(""), 1400);
+      setMessage("Word not in dictionary");
+      setTimeout(() => setMessage(""), 1800);
+      return;
     }
 
     const evaluatedResult = evaluateGuess(normalizedGuess, word.word);

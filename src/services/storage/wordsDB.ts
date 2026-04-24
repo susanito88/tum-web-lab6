@@ -1,4 +1,4 @@
-import { openDB } from "idb";
+﻿import { openDB } from "idb";
 import type { Word } from "@/types";
 
 let db: any = null;
@@ -242,386 +242,117 @@ export async function initWordsDB(): Promise<void> {
     },
   });
 
-  await ensureDefaultWords();
+  const defaultWords = await loadDefaultWords();
+  await ensureDefaultWords(defaultWords);
   await migrateWordsToEncryption();
 }
 
-const COMMON_WORDS = [
-  "ABOUT",
-  "ABOVE",
-  "ABUSE",
-  "ADAPT",
-  "ADMIT",
-  "ADOPT",
-  "ADULT",
-  "AFTER",
-  "AGAIN",
-  "AGENT",
-  "AGREE",
-  "AHEAD",
-  "ALARM",
-  "ALBUM",
-  "ALERT",
-  "ALIKE",
-  "ALIVE",
-  "ALLOW",
-  "ALONE",
-  "ALONG",
-  "ALTER",
-  "ANGEL",
-  "ANGER",
-  "ANGLE",
-  "ANGRY",
-  "APART",
-  "APPLE",
-  "APPLY",
-  "ARENA",
-  "ARGUE",
-  "ARISE",
-  "ARRAY",
-  "ARROW",
-  "ASIDE",
-  "ASSET",
-  "AUDIO",
-  "AVOID",
-  "AWAKE",
-  "AWARE",
-  "BADLY",
-  "BAKER",
-  "BASIC",
-  "BEACH",
-  "BEGAN",
-  "BEGIN",
-  "BELOW",
-  "BLACK",
-  "BLAME",
-  "BLEND",
-  "BLIND",
-  "BLOCK",
-  "BLOOD",
-  "BOARD",
-  "BRAIN",
-  "BRAND",
-  "BRAVE",
-  "BREAD",
-  "BREAK",
-  "BRING",
-  "BROAD",
-  "BROKE",
-  "BROWN",
-  "BUILD",
-  "CABLE",
-  "CARRY",
-  "CATCH",
-  "CAUSE",
-  "CHAIN",
-  "CHAIR",
-  "CHART",
-  "CHASE",
-  "CHECK",
-  "CHILD",
-  "CLEAN",
-  "CLEAR",
-  "CLICK",
-  "CLOCK",
-  "CLOSE",
-  "CLOUD",
-  "COACH",
-  "COAST",
-  "COVER",
-  "CRAFT",
-  "CRASH",
-  "CREAM",
-  "CRIME",
-  "CROSS",
-  "CROWD",
-  "CROWN",
-  "DAILY",
-  "DANCE",
-  "DEALT",
-  "DEATH",
-  "DELAY",
-  "DEPTH",
-  "DRAFT",
-  "DRAMA",
-  "DREAM",
-  "DRESS",
-  "DRINK",
-  "DRIVE",
-  "EARTH",
-  "EIGHT",
-  "ENJOY",
-  "ENTER",
-  "ENTRY",
-  "ERROR",
-  "EVENT",
-  "EVERY",
-  "EXACT",
-  "EXIST",
-  "EXTRA",
-  "FAITH",
-  "FALSE",
-  "FAVOR",
-  "FIELD",
-  "FIGHT",
-  "FINAL",
-  "FIRST",
-  "FOCUS",
-  "FORCE",
-  "FRESH",
-  "FRONT",
-  "FRUIT",
-  "GIANT",
-  "GIVEN",
-  "GLASS",
-  "GLOBE",
-  "GRACE",
-  "GRADE",
-  "GRAND",
-  "GRANT",
-  "GRASS",
-  "GREAT",
-  "GREEN",
-  "GROUP",
-  "GROWN",
-  "GUARD",
-  "GUESS",
-  "GUEST",
-  "GUIDE",
-  "HAPPY",
-  "HEART",
-  "HEAVY",
-  "HORSE",
-  "HOTEL",
-  "HOUSE",
-  "HUMAN",
-  "IDEAL",
-  "IMAGE",
-  "INDEX",
-  "INNER",
-  "INPUT",
-  "ISSUE",
-  "JOINT",
-  "JUDGE",
-  "KNIFE",
-  "LARGE",
-  "LASER",
-  "LATER",
-  "LAUGH",
-  "LAYER",
-  "LEARN",
-  "LEAST",
-  "LEAVE",
-  "LIGHT",
-  "LIMIT",
-  "LOCAL",
-  "LOGIC",
-  "MAGIC",
-  "MAJOR",
-  "MAKER",
-  "MARCH",
-  "MATCH",
-  "MAYBE",
-  "METAL",
-  "MIGHT",
-  "MINOR",
-  "MODEL",
-  "MONEY",
-  "MONTH",
-  "MOTOR",
-  "MOUTH",
-  "MOVIE",
-  "MUSIC",
-  "NEVER",
-  "NIGHT",
-  "NOISE",
-  "NORTH",
-  "NOVEL",
-  "NURSE",
-  "OCEAN",
-  "OFFER",
-  "OFTEN",
-  "ORDER",
-  "OTHER",
-  "OWNER",
-  "PANEL",
-  "PAPER",
-  "PARTY",
-  "PEACE",
-  "PHASE",
-  "PHONE",
-  "PHOTO",
-  "PIECE",
-  "PILOT",
-  "PIZZA",
-  "PLACE",
-  "PLAIN",
-  "PLANE",
-  "PLANT",
-  "PLATE",
-  "POINT",
-  "POWER",
-  "PRESS",
-  "PRICE",
-  "PRIDE",
-  "PRIME",
-  "PRINT",
-  "PRIOR",
-  "PRIZE",
-  "PROOF",
-  "PROUD",
-  "QUEEN",
-  "QUICK",
-  "QUIET",
-  "RADIO",
-  "RAISE",
-  "RANGE",
-  "RAPID",
-  "RATIO",
-  "REACH",
-  "REACT",
-  "READY",
-  "RELAX",
-  "REPLY",
-  "RIGHT",
-  "RIVER",
-  "ROUGH",
-  "ROUND",
-  "ROUTE",
-  "ROYAL",
-  "RURAL",
-  "SCALE",
-  "SCENE",
-  "SCOPE",
-  "SCORE",
-  "SENSE",
-  "SERVE",
-  "SEVEN",
-  "SHALL",
-  "SHAPE",
-  "SHARE",
-  "SHIFT",
-  "SHINE",
-  "SHIRT",
-  "SHOCK",
-  "SHORT",
-  "SHOWN",
-  "SIGHT",
-  "SINCE",
-  "SKILL",
-  "SLEEP",
-  "SLICE",
-  "SMALL",
-  "SMART",
-  "SMILE",
-  "SMOKE",
-  "SOLID",
-  "SOLVE",
-  "SOUND",
-  "SOUTH",
-  "SPACE",
-  "SPARE",
-  "SPEAK",
-  "SPEED",
-  "SPEND",
-  "SPLIT",
-  "SPOKE",
-  "SPORT",
-  "STAFF",
-  "STAGE",
-  "STAND",
-  "START",
-  "STATE",
-  "STEEL",
-  "STICK",
-  "STILL",
-  "STOCK",
-  "STONE",
-  "STORE",
-  "STORY",
-  "STRIP",
-  "STYLE",
-  "SUGAR",
-  "TABLE",
-  "TAKEN",
-  "TASTE",
-  "TEACH",
-  "THANK",
-  "THEIR",
-  "THEME",
-  "THERE",
-  "THICK",
-  "THING",
-  "THINK",
-  "THIRD",
-  "THOSE",
-  "THREE",
-  "THROW",
-  "TIGHT",
-  "TIMES",
-  "TIRED",
-  "TITLE",
-  "TODAY",
-  "TOPIC",
-  "TOTAL",
-  "TOUCH",
-  "TOUGH",
-  "TOWER",
-  "TRACK",
-  "TRADE",
-  "TRAIN",
-  "TREAT",
-  "TREND",
-  "TRIAL",
-  "TRUCK",
-  "TRULY",
-  "TRUST",
-  "TRUTH",
-  "TWICE",
-  "UNDER",
-  "UNION",
-  "UNITY",
-  "UNTIL",
-  "UPPER",
-  "URBAN",
-  "USAGE",
-  "VALUE",
-  "VIDEO",
-  "VISIT",
-  "VOICE",
-  "WASTE",
-  "WATCH",
-  "WATER",
-  "WHEEL",
-  "WHERE",
-  "WHICH",
-  "WHILE",
-  "WHITE",
-  "WHOLE",
-  "WOMAN",
-  "WORLD",
-  "WORRY",
-  "WORTH",
-  "WRITE",
-  "WRONG",
-  "YOUTH",
-] as const;
+const DICTIONARY_URL = `${import.meta.env.BASE_URL}dictionaries/english-5-v1.json`;
 
-const DEFAULT_WORDS: Record<Word["category"], string[]> = {
-  Easy: COMMON_WORDS.slice(0, 110),
-  Medium: COMMON_WORDS.slice(110, 220),
-  Hard: COMMON_WORDS.slice(220, 330),
-  Extreme: COMMON_WORDS.slice(330),
+type DictionaryPayload = {
+  version?: string;
+  validWords?: unknown;
+  categories?: Partial<Record<Word["category"], unknown>>;
 };
 
-async function ensureDefaultWords(): Promise<void> {
+type DictionaryData = {
+  categories: Record<Word["category"], string[]>;
+  validWords: Set<string>;
+};
+
+let dictionaryDataPromise: Promise<DictionaryData> | null = null;
+
+function emptyDefaultWords(): Record<Word["category"], string[]> {
+  return {
+    Easy: [],
+    Medium: [],
+    Hard: [],
+    Extreme: [],
+  };
+}
+
+function normalizeDictionaryWords(words: unknown): string[] {
+  if (!Array.isArray(words)) return [];
+
+  return Array.from(
+    new Set(
+      words
+        .map((w) => (typeof w === "string" ? w.trim().toUpperCase() : ""))
+        .filter((w) => /^[A-Z]{5}$/.test(w)),
+    ),
+  );
+}
+
+async function loadDefaultWords(): Promise<Record<Word["category"], string[]>> {
+  if (!dictionaryDataPromise) {
+    dictionaryDataPromise = (async () => {
+      const res = await fetch(DICTIONARY_URL, { cache: "no-cache" });
+      if (!res.ok) {
+        throw new Error(`Failed to load dictionary: ${res.status}`);
+      }
+
+      const payload = (await res.json()) as DictionaryPayload;
+      const categories = payload?.categories ?? {};
+      const normalizedCategories: Record<Word["category"], string[]> = {
+        Easy: normalizeDictionaryWords(categories.Easy),
+        Medium: normalizeDictionaryWords(categories.Medium),
+        Hard: normalizeDictionaryWords(categories.Hard),
+        Extreme: normalizeDictionaryWords(categories.Extreme),
+      };
+
+      const validWords = new Set<string>(
+        normalizeDictionaryWords(payload?.validWords),
+      );
+
+      if (validWords.size === 0) {
+        for (const words of Object.values(normalizedCategories)) {
+          for (const word of words) {
+            validWords.add(word);
+          }
+        }
+      }
+
+      return {
+        categories: normalizedCategories,
+        validWords,
+      };
+    })().catch((error) => {
+      console.error("Dictionary load failed:", error);
+      const fallback = emptyDefaultWords();
+      return {
+        categories: fallback,
+        validWords: new Set<string>(),
+      };
+    });
+  }
+
+  const dictionaryData = await dictionaryDataPromise;
+  return dictionaryData.categories;
+}
+
+async function loadValidWords(): Promise<Set<string>> {
+  if (!dictionaryDataPromise) {
+    await loadDefaultWords();
+  }
+
+  if (!dictionaryDataPromise) {
+    return new Set<string>();
+  }
+
+  const dictionaryData = await dictionaryDataPromise;
+  return dictionaryData.validWords;
+}
+
+async function ensureDefaultWords(
+  defaultWords: Record<Word["category"], string[]>,
+): Promise<void> {
   if (!db) return;
 
   const tx = db.transaction("words", "readwrite");
   const now = Date.now();
   let changedAny = false;
 
-  for (const [category, words] of Object.entries(DEFAULT_WORDS)) {
+  for (const [category, words] of Object.entries(defaultWords)) {
     for (const plainWord of words) {
       const normalizedWord = plainWord.toUpperCase();
       const id = `${category.toLowerCase()}-${normalizedWord.toLowerCase()}`;
@@ -733,7 +464,8 @@ export async function getWordsByCategory(
 
   // Recover if defaults were removed or storage got cleared while the app was open.
   if (allWords.length === 0) {
-    await ensureDefaultWords();
+    const defaultWords = await loadDefaultWords();
+    await ensureDefaultWords(defaultWords);
     try {
       allWords = (await db.getAllFromIndex(
         "words",
@@ -782,9 +514,25 @@ export async function isWordInDictionary(word: string): Promise<boolean> {
   if (!normalized) return false;
 
   if (!dictionaryCache) {
-    const words = await getAllWords();
-    dictionaryCache = new Set(words.map((w) => w.word.toUpperCase()));
+    const validWords = await loadValidWords();
+    dictionaryCache = new Set(validWords);
+
+    if (!db) await initWordsDB();
+    if (db) {
+      const customWords = (await db.getAllFromIndex(
+        "words",
+        "by-isCustom",
+        true,
+      )) as StoredWord[];
+      const plainCustomWords = await Promise.all(
+        customWords.map((w) => decryptWord(w.word)),
+      );
+      for (const customWord of plainCustomWords) {
+        dictionaryCache.add(customWord.toUpperCase());
+      }
+    }
   }
 
   return dictionaryCache.has(normalized);
 }
+
