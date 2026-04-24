@@ -6,6 +6,7 @@ let dictionaryCache: Set<string> | null = null;
 
 const DB_NAME = "WordleDB";
 const DB_VERSION = 2;
+const DICTIONARY_VERSION_KEY = "wordle.dictionary.version";
 
 const WORD_ENCODING_TAG = "WDL1";
 const WORD_CIPHER_TAG = "WDL2";
@@ -242,7 +243,9 @@ export async function initWordsDB(): Promise<void> {
     },
   });
 
+  const dictionaryVersion = await loadDictionaryVersion();
   const defaultWords = await loadDefaultWords();
+  await syncDictionaryDefaults(dictionaryVersion);
   await ensureDefaultWords(defaultWords);
   await migrateWordsToEncryption();
 }
@@ -256,6 +259,7 @@ type DictionaryPayload = {
 };
 
 type DictionaryData = {
+  version: string;
   categories: Record<Word["category"], string[]>;
   validWords: Set<string>;
 };
@@ -313,6 +317,7 @@ async function loadDefaultWords(): Promise<Record<Word["category"], string[]>> {
       }
 
       return {
+        version: payload?.version ?? "1",
         categories: normalizedCategories,
         validWords,
       };
@@ -320,6 +325,7 @@ async function loadDefaultWords(): Promise<Record<Word["category"], string[]>> {
       console.error("Dictionary load failed:", error);
       const fallback = emptyDefaultWords();
       return {
+        version: "fallback",
         categories: fallback,
         validWords: new Set<string>(),
       };
@@ -328,6 +334,41 @@ async function loadDefaultWords(): Promise<Record<Word["category"], string[]>> {
 
   const dictionaryData = await dictionaryDataPromise;
   return dictionaryData.categories;
+}
+
+async function loadDictionaryVersion(): Promise<string> {
+  if (!dictionaryDataPromise) {
+    await loadDefaultWords();
+  }
+
+  if (!dictionaryDataPromise) {
+    return "fallback";
+  }
+
+  const dictionaryData = await dictionaryDataPromise;
+  return dictionaryData.version;
+}
+
+async function syncDictionaryDefaults(dictionaryVersion: string): Promise<void> {
+  if (!db) return;
+
+  const previousVersion = localStorage.getItem(DICTIONARY_VERSION_KEY);
+  if (previousVersion === dictionaryVersion) return;
+
+  const tx = db.transaction("words", "readwrite");
+  let cursor = await tx.store.openCursor();
+
+  while (cursor) {
+    const value = cursor.value as StoredWord;
+    if (!value.isCustom) {
+      await cursor.delete();
+    }
+    cursor = await cursor.continue();
+  }
+
+  await tx.done;
+  localStorage.setItem(DICTIONARY_VERSION_KEY, dictionaryVersion);
+  dictionaryCache = null;
 }
 
 async function loadValidWords(): Promise<Set<string>> {

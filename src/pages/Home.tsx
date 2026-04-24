@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Word, GameMode } from "@/types";
 import { getWordsByCategory } from "@/services/storage/wordsDB";
@@ -6,14 +6,6 @@ import { useCoins } from "@/hooks/useCoins";
 import styles from "./styles/Home.module.css";
 
 const CATEGORIES = ["Easy", "Medium", "Hard", "Extreme"] as const;
-type CategoryCounts = Record<Word["category"], number>;
-
-const INITIAL_COUNTS: CategoryCounts = {
-  Easy: 0,
-  Medium: 0,
-  Hard: 0,
-  Extreme: 0,
-};
 
 export function Home() {
   const navigate = useNavigate();
@@ -21,33 +13,6 @@ export function Home() {
   const [selectedCategory, setSelectedCategory] =
     useState<Word["category"]>("Easy");
   const [selectedMode, setSelectedMode] = useState<GameMode>("classic");
-  const [wordCounts, setWordCounts] = useState<CategoryCounts>(INITIAL_COUNTS);
-
-  useEffect(() => {
-    const loadWordCounts = async () => {
-      try {
-        const categoryEntries = await Promise.all(
-          CATEGORIES.map(async (category) => {
-            const words = await getWordsByCategory(category);
-            return [category, words.length] as const;
-          }),
-        );
-
-        setWordCounts(
-          categoryEntries.reduce<CategoryCounts>(
-            (acc, [category, count]) => {
-              acc[category] = count;
-              return acc;
-            },
-            { ...INITIAL_COUNTS },
-          ),
-        );
-      } catch {
-        setWordCounts(INITIAL_COUNTS);
-      }
-    };
-    loadWordCounts();
-  }, []);
 
   const handleStartGame = async () => {
     const words = await getWordsByCategory(selectedCategory);
@@ -101,9 +66,6 @@ export function Home() {
                 onClick={() => setSelectedCategory(category)}
               >
                 <div className={styles.cardTitle}>{category}</div>
-                <div className={styles.cardCount}>
-                  {wordCounts[category]} words
-                </div>
               </button>
             ))}
           </div>
