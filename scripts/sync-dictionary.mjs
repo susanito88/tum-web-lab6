@@ -27,6 +27,15 @@ const RARE_LETTER_WEIGHTS = {
   F: 2,
 };
 
+function hashWord(word) {
+  let hash = 2166136261;
+  for (let i = 0; i < word.length; i += 1) {
+    hash ^= word.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 function scoreWord(word) {
   const letters = word.split("");
   const uniqueCount = new Set(letters).size;
@@ -79,15 +88,19 @@ async function main() {
   );
 
   const sortedByDifficulty = allFiveLetterWords
-    .map((word) => ({ word, score: scoreWord(word) }))
-    .sort((a, b) => a.score - b.score)
+    .map((word) => ({
+      word,
+      score: scoreWord(word),
+      tieBreaker: hashWord(word),
+    }))
+    .sort((a, b) => a.score - b.score || a.tieBreaker - b.tieBreaker)
     .map((entry) => entry.word);
 
   const wordsByCategory = chunkByDifficulty(sortedByDifficulty);
   const playableWords = pickPlayableWords(wordsByCategory);
 
   const payload = {
-    version: "2.0.0",
+    version: "2.1.0",
     source: "word-list (npm)",
     generatedAt: new Date().toISOString(),
     stats: {

@@ -12,6 +12,7 @@ export function Home() {
   const [selectedCategory, setSelectedCategory] =
     useState<Word["category"]>("Easy");
   const [selectedMode, setSelectedMode] = useState<GameMode>("classic");
+  const [showInfo, setShowInfo] = useState(false);
 
   const handleStartGame = () => {
     navigate(`/game/${selectedCategory}/${selectedMode}`);
@@ -48,6 +49,15 @@ export function Home() {
       </header>
 
       <main className={styles.main}>
+        <button
+          className={styles.infoButton}
+          onClick={() => setShowInfo(true)}
+          title="How scoring and modes work"
+          aria-label="Show game rules and scoring info"
+        >
+          i
+        </button>
+
         <section className={styles.section}>
           <h2>Select Difficulty</h2>
           <div className={styles.grid}>
@@ -102,6 +112,57 @@ export function Home() {
           Start Game
         </button>
       </main>
+
+      {showInfo && (
+        <div
+          className={styles.infoOverlay}
+          onClick={() => setShowInfo(false)}
+          role="presentation"
+        >
+          <div
+            className={styles.infoModal}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Game rules and scoring"
+          >
+            <div className={styles.infoModalHeader}>
+              <h3>Quick Rules</h3>
+              <button
+                className={styles.infoClose}
+                onClick={() => setShowInfo(false)}
+                aria-label="Close info"
+              >
+                x
+              </button>
+            </div>
+
+            <div className={styles.infoContent}>
+              <p>
+                Win a game to earn coins. Faster solves and harder modes give
+                more.
+              </p>
+              <p>
+                Coins formula: floor((10 + guess bonus + difficulty bonus) x
+                mode multiplier)
+              </p>
+              <p>Guess bonus: (6 - guesses used) x 2</p>
+              <p>
+                Difficulty bonus: Easy +5, Medium +10, Hard +15, Extreme +20
+              </p>
+              <p>Mode multiplier: Classic x1.0, Speed x1.2, Hardcore x1.5</p>
+
+              <h4>Game Modes</h4>
+              <p>Classic: 6 guesses, normal feedback.</p>
+              <p>Speed: same rules, but with a 5-minute timer.</p>
+              <p>
+                Hardcore: correct letters are not shown by exact position
+                (harder feedback).
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

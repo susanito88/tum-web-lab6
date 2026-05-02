@@ -71,6 +71,85 @@
   max-width: 800px;
   margin: 0 auto;
   width: 100%;
+  position: relative;
+}
+
+.infoButton {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--cell-border);
+  background: var(--cell-bg);
+  color: var(--text-color);
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+}
+
+.infoButton:hover {
+  transform: translateY(-1px) scale(1.05);
+}
+
+.infoOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.infoModal {
+  width: min(720px, 96vw);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border: 1px solid var(--cell-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.infoModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--cell-border);
+}
+
+.infoModalHeader h3 {
+  margin: 0;
+}
+
+.infoClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--cell-border);
+  background: var(--cell-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.infoContent {
+  padding: 14px 16px 18px;
+}
+
+.infoContent p {
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.infoContent h4 {
+  margin: 10px 0 8px;
 }
 
 .section {
@@ -217,5 +296,14 @@
     height: 36px;
     padding: 8px 10px;
     font-size: 13px;
+  }
+
+  .main {
+    padding-top: calc(var(--spacing-xl) + 32px);
+  }
+
+  .infoButton {
+    top: 14px;
+    right: 14px;
   }
 }
