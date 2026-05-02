@@ -1,20 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Word, GameMode, Guess } from '@/types';
-import { getRandomWord } from '@/services/storage/wordsDB';
-import { addGameToHistory } from '@/services/storage/gameHistoryDB';
-import { useCoins, useStreak } from '@/hooks/useCoins';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import type { Word, GameMode, Guess } from "@/types";
+import { getRandomWord, isWordInDictionary } from "@/services/storage/wordsDB";
+import { addGameToHistory } from "@/services/storage/gameHistoryDB";
+import { useCoins, useStreak } from "@/hooks/useCoins";
 import {
   evaluateGuess,
   calculateCoinsEarned,
   getDifficultyNumber,
-  isValidWord,
   getKeyboardState,
-} from '@/utils/gameUtils';
-import { localStorageService } from '@/services/storage/localStorageService';
-import styles from './Game.module.css';
+} from "@/utils/gameUtils";
+import { localStorageService } from "@/services/storage/localStorageService";
+import styles from "./Game.module.css";
 
 export function GameComponent() {
+  const KEYBOARD_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
   const { category, mode } = useParams<{ category: string; mode: string }>();
   const navigate = useNavigate();
   const { addCoins, coins, spendCoins } = useCoins();
@@ -22,10 +22,10 @@ export function GameComponent() {
 
   const [word, setWord] = useState<Word | null>(null);
   const [guesses, setGuesses] = useState<Guess[]>([]);
-  const [currentGuess, setCurrentGuess] = useState('');
+  const [currentGuess, setCurrentGuess] = useState("");
   const [gameWon, setGameWon] = useState(false);
   const [gameLost, setGameLost] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [hintsRemaining, setHintsRemaining] = useState({
     reveal: 5,
     position: 5,
@@ -37,12 +37,12 @@ export function GameComponent() {
   useEffect(() => {
     const initGame = async () => {
       try {
-        const randomWord = await getRandomWord(category as Word['category']);
+        const randomWord = await getRandomWord(category as Word["category"]);
         setWord(randomWord);
         localStorageService.setLastPlayedAt(Date.now());
       } catch (error) {
-        console.error('Failed to load word:', error);
-        navigate('/');
+        console.error("Failed to load word:", error);
+        navigate("/");
       }
     };
     initGame();
@@ -50,7 +50,7 @@ export function GameComponent() {
 
   // Timer for speed mode
   useEffect(() => {
-    if (!timerActive || mode !== 'speed') return;
+    if (!timerActive || mode !== "speed") return;
 
     const timer = setInterval(() => {
       setTimeElapsed((t) => {
@@ -70,42 +70,50 @@ export function GameComponent() {
   const handleGuess = async () => {
     if (!word) return;
     if (gameLost || gameWon) return;
-    if (currentGuess.length !== 5) {
-      setMessage('Word must be 5 letters');
-      setTimeout(() => setMessage(''), 2000);
+    const normalizedGuess = currentGuess.trim().toUpperCase();
+
+    if (normalizedGuess.length !== 5) {
+      setMessage("Word must be 5 letters");
+      setTimeout(() => setMessage(""), 2000);
       return;
     }
 
-    if (!isValidWord(currentGuess)) {
-      setMessage('Not in word list');
-      setTimeout(() => setMessage(''), 2000);
+    if (!/^[A-Z]{5}$/.test(normalizedGuess)) {
+      setMessage("Use only letters A-Z");
+      setTimeout(() => setMessage(""), 2000);
       return;
     }
 
-    const result = evaluateGuess(currentGuess, word.word);
-    const newGuesses = [...guesses, { word: currentGuess, result }];
+    // Soft dictionary check for user feedback; unknown words are still allowed.
+    const existsInDictionary = await isWordInDictionary(normalizedGuess);
+    if (!existsInDictionary) {
+      setMessage("Word not in dictionary, but accepted");
+      setTimeout(() => setMessage(""), 1400);
+    }
+
+    const result = evaluateGuess(normalizedGuess, word.word);
+    const newGuesses = [...guesses, { word: normalizedGuess, result }];
     setGuesses(newGuesses);
-    setCurrentGuess('');
+    setCurrentGuess("");
 
-    const isCorrect = currentGuess.toUpperCase() === word.word.toUpperCase();
+    const isCorrect = normalizedGuess === word.word.toUpperCase();
 
     if (isCorrect) {
       setGameWon(true);
       setTimerActive(false);
 
       const gameMode = mode as GameMode;
-      const difficulty = getDifficultyNumber(category || 'Easy');
+      const difficulty = getDifficultyNumber(category || "Easy");
       const coinsEarned = calculateCoinsEarned(
         newGuesses.length,
         gameMode,
-        difficulty
+        difficulty,
       );
 
       addCoins(coinsEarned);
       incrementStreak();
 
       await addGameToHistory({
-        id: `${Date.now()}-${Math.random()}`,
         word: word.word,
         gameMode,
         category: word.category,
@@ -121,10 +129,9 @@ export function GameComponent() {
       setTimerActive(false);
 
       const gameMode = mode as GameMode;
-      const difficulty = getDifficultyNumber(category || 'Easy');
+      const difficulty = getDifficultyNumber(category || "Easy");
 
       await addGameToHistory({
-        id: `${Date.now()}-${Math.random()}`,
         word: word.word,
         gameMode,
         category: word.category,
@@ -139,19 +146,17 @@ export function GameComponent() {
   };
 
   const handleRevealLetter = () => {
-    if (!word || mode === 'hardcore' || hintsRemaining.reveal === 0) return;
+    if (!word || mode === "hardcore" || hintsRemaining.reveal === 0) return;
     if (!spendCoins(5)) {
-      setMessage('Not enough coins (need 5)!');
-      setTimeout(() => setMessage(''), 2000);
+      setMessage("Not enough coins (need 5)!");
+      setTimeout(() => setMessage(""), 2000);
       return;
     }
 
     const revealedIndices = new Set(
       guesses
-        .flatMap((g, i) =>
-          g.result.map((r, j) => (r === 'correct' ? j : -1))
-        )
-        .filter((j) => j !== -1)
+        .flatMap((g) => g.result.map((r, j) => (r === "correct" ? j : -1)))
+        .filter((j) => j !== -1),
     );
 
     let unrevealedIndex = -1;
@@ -170,18 +175,16 @@ export function GameComponent() {
   };
 
   const handleRevealPosition = () => {
-    if (!word || mode === 'hardcore' || hintsRemaining.position === 0) return;
+    if (!word || mode === "hardcore" || hintsRemaining.position === 0) return;
     if (!spendCoins(10)) {
-      setMessage('Not enough coins (need 10)!');
-      setTimeout(() => setMessage(''), 2000);
+      setMessage("Not enough coins (need 10)!");
+      setTimeout(() => setMessage(""), 2000);
       return;
     }
 
-    const correctLetters = word.word.split('');
+    const correctLetters = word.word.split("");
     const revealedPositions = guesses
-      .flatMap((g, i) =>
-        g.result.map((r, j) => (r === 'correct' ? j : -1))
-      )
+      .flatMap((g) => g.result.map((r, j) => (r === "correct" ? j : -1)))
       .filter((j) => j !== -1);
 
     const unrevealedPositions = correctLetters
@@ -199,24 +202,24 @@ export function GameComponent() {
   };
 
   const handleEliminateLetters = () => {
-    if (!word || mode === 'hardcore' || hintsRemaining.eliminate === 0) return;
+    if (!word || mode === "hardcore" || hintsRemaining.eliminate === 0) return;
     if (!spendCoins(8)) {
-      setMessage('Not enough coins (need 8)!');
-      setTimeout(() => setMessage(''), 2000);
+      setMessage("Not enough coins (need 8)!");
+      setTimeout(() => setMessage(""), 2000);
       return;
     }
 
     const wordLetters = new Set(word.word.toUpperCase());
     const guessedLetters = new Set(
-      guesses.flatMap((g) => g.word.toUpperCase())
+      guesses.flatMap((g) => g.word.toUpperCase()),
     );
 
-    const wrongNotGuessed = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-      .split('')
+    const wrongNotGuessed = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+      .split("")
       .filter((l) => !wordLetters.has(l) && !guessedLetters.has(l));
 
-    const toEliminate = wrongNotGuessed.slice(0, 3).join(', ');
-    setMessage(`Not in word: ${toEliminate || 'None new'}`);
+    const toEliminate = wrongNotGuessed.slice(0, 3).join(", ");
+    setMessage(`Not in word: ${toEliminate || "None new"}`);
     setHintsRemaining((h) => ({ ...h, eliminate: h.eliminate - 1 }));
   };
 
@@ -230,22 +233,23 @@ export function GameComponent() {
 
   const gameMode = mode as GameMode;
   const timeRemaining = 300 - timeElapsed;
+  const keyboardState = getKeyboardState(guesses);
 
   return (
     <div className={styles.game}>
       <header className={styles.gameHeader}>
-        <button onClick={() => navigate('/')} className={styles.backButton}>
-          ← Back
+        <button onClick={() => navigate("/")} className={styles.backButton}>
+          Back
         </button>
         <h2>
           {category} - {gameMode.charAt(0).toUpperCase() + gameMode.slice(1)}
         </h2>
         <div className={styles.headerStats}>
-          <span>💰 {coins}</span>
-          {gameMode === 'speed' && (
+          <span>Coins: {coins}</span>
+          {gameMode === "speed" && (
             <span className={styles.timer}>
               {Math.floor(timeRemaining / 60)}:
-              {(timeRemaining % 60).toString().padStart(2, '0')}
+              {(timeRemaining % 60).toString().padStart(2, "0")}
             </span>
           )}
         </div>
@@ -256,7 +260,7 @@ export function GameComponent() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={styles.guessRow}>
               {guesses[i]
-                ? guesses[i].word.split('').map((letter, j) => {
+                ? guesses[i].word.split("").map((letter, j) => {
                     const result = guesses[i].result[j];
                     return (
                       <div
@@ -268,7 +272,7 @@ export function GameComponent() {
                     );
                   })
                 : i === guesses.length
-                  ? currentGuess.split('').map((letter, j) => (
+                  ? currentGuess.split("").map((letter, j) => (
                       <div key={j} className={styles.letter}>
                         {letter.toUpperCase()}
                       </div>
@@ -286,7 +290,7 @@ export function GameComponent() {
                 maxLength={5}
                 value={currentGuess}
                 onChange={(e) => setCurrentGuess(e.target.value.toUpperCase())}
-                onKeyDown={(e) => e.key === 'Enter' && handleGuess()}
+                onKeyDown={(e) => e.key === "Enter" && handleGuess()}
                 placeholder="Type 5 letters..."
                 autoFocus
               />
@@ -295,28 +299,46 @@ export function GameComponent() {
               </button>
             </div>
 
-            {gameMode !== 'hardcore' && (
+            {gameMode !== "hardcore" && (
               <div className={styles.hints}>
                 <button
                   onClick={handleRevealLetter}
                   disabled={hintsRemaining.reveal === 0}
                 >
-                  Reveal Letter (5💰) {hintsRemaining.reveal}
+                  Reveal Letter (5 coins) {hintsRemaining.reveal}
                 </button>
                 <button
                   onClick={handleRevealPosition}
                   disabled={hintsRemaining.position === 0}
                 >
-                  Reveal Position (10💰) {hintsRemaining.position}
+                  Reveal Position (10 coins) {hintsRemaining.position}
                 </button>
                 <button
                   onClick={handleEliminateLetters}
                   disabled={hintsRemaining.eliminate === 0}
                 >
-                  Eliminate Letters (8💰) {hintsRemaining.eliminate}
+                  Eliminate Letters (8 coins) {hintsRemaining.eliminate}
                 </button>
               </div>
             )}
+
+            <div className={styles.keyboard}>
+              {KEYBOARD_ROWS.map((row) => (
+                <div key={row} className={styles.keyboardRow}>
+                  {row.split("").map((letter) => {
+                    const state = keyboardState[letter];
+                    return (
+                      <span
+                        key={letter}
+                        className={`${styles.key} ${state ? styles[state] : ""}`}
+                      >
+                        {letter}
+                      </span>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </>
         )}
 
@@ -324,9 +346,9 @@ export function GameComponent() {
 
         {gameWon && (
           <div className={styles.result}>
-            <h3>🎉 You Won!</h3>
+            <h3>You Won!</h3>
             <p>Guesses: {guesses.length}/6</p>
-            <button onClick={() => navigate('/')} className={styles.nextButton}>
+            <button onClick={() => navigate("/")} className={styles.nextButton}>
               Play Again
             </button>
           </div>
@@ -334,11 +356,11 @@ export function GameComponent() {
 
         {gameLost && (
           <div className={styles.result}>
-            <h3>😢 Game Over</h3>
+            <h3>Game Over</h3>
             <p>
               The word was: <strong>{word.word}</strong>
             </p>
-            <button onClick={() => navigate('/')} className={styles.nextButton}>
+            <button onClick={() => navigate("/")} className={styles.nextButton}>
               Back to Menu
             </button>
           </div>

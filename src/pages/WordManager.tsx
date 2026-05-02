@@ -1,22 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Word } from '@/types';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import type { Word } from "@/types";
 import {
-  getAllWords,
   addWord,
   deleteWord,
   toggleLike,
   getWordsByCategory,
-} from '@/services/storage/wordsDB';
-import styles from './styles/WordManager.module.css';
+} from "@/services/storage/wordsDB";
+import styles from "./styles/WordManager.module.css";
 
 export function WordManager() {
   const navigate = useNavigate();
-  const [selectedCategory, setSelectedCategory] = useState<Word['category']>('Easy');
+  const [selectedCategory, setSelectedCategory] =
+    useState<Word["category"]>("Easy");
   const [words, setWords] = useState<Word[]>([]);
-  const [search, setSearch] = useState('');
-  const [newWord, setNewWord] = useState('');
-  const [message, setMessage] = useState('');
+  const [search, setSearch] = useState("");
+  const [newWord, setNewWord] = useState("");
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     loadWords();
@@ -27,15 +27,15 @@ export function WordManager() {
       const categoryWords = await getWordsByCategory(selectedCategory);
       setWords(categoryWords);
     } catch (error) {
-      console.error('Failed to load words:', error);
+      console.error("Failed to load words:", error);
     }
   };
 
   const handleAddWord = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newWord.trim().length !== 5) {
-      setMessage('Word must be exactly 5 letters');
-      setTimeout(() => setMessage(''), 2000);
+      setMessage("Word must be exactly 5 letters");
+      setTimeout(() => setMessage(""), 2000);
       return;
     }
 
@@ -47,13 +47,13 @@ export function WordManager() {
         liked: false,
         isCustom: true,
       });
-      setNewWord('');
-      setMessage('Word added successfully!');
+      setNewWord("");
+      setMessage("Word added successfully!");
       loadWords();
-      setTimeout(() => setMessage(''), 2000);
+      setTimeout(() => setMessage(""), 2000);
     } catch (error) {
-      console.error('Failed to add word:', error);
-      setMessage('Failed to add word');
+      console.error("Failed to add word:", error);
+      setMessage("Failed to add word");
     }
   };
 
@@ -61,12 +61,12 @@ export function WordManager() {
     try {
       await deleteWord(id);
       loadWords();
-      setMessage('Word deleted');
-      setTimeout(() => setMessage(''), 2000);
+      setMessage("Word deleted");
+      setTimeout(() => setMessage(""), 2000);
     } catch (error) {
-      console.error('Failed to delete word:', error);
-      setMessage('Can only delete custom words');
-      setTimeout(() => setMessage(''), 2000);
+      console.error("Failed to delete word:", error);
+      setMessage("Can only delete custom words");
+      setTimeout(() => setMessage(""), 2000);
     }
   };
 
@@ -75,12 +75,12 @@ export function WordManager() {
       await toggleLike(id);
       loadWords();
     } catch (error) {
-      console.error('Failed to toggle like:', error);
+      console.error("Failed to toggle like:", error);
     }
   };
 
   const filteredWords = words.filter((w) =>
-    w.word.toLowerCase().includes(search.toLowerCase())
+    w.word.toLowerCase().includes(search.toLowerCase()),
   );
 
   const customWords = filteredWords.filter((w) => w.isCustom);
@@ -89,8 +89,8 @@ export function WordManager() {
   return (
     <div className={styles.wordManager}>
       <header className={styles.header}>
-        <button onClick={() => navigate('/')} className={styles.backButton}>
-          ← Back
+        <button onClick={() => navigate("/")} className={styles.backButton}>
+          Back
         </button>
         <h1>Word Manager</h1>
         <div></div>
@@ -98,10 +98,10 @@ export function WordManager() {
 
       <main className={styles.main}>
         <div className={styles.categoryTabs}>
-          {(['Easy', 'Medium', 'Hard', 'Extreme'] as const).map((cat) => (
+          {(["Easy", "Medium", "Hard", "Extreme"] as const).map((cat) => (
             <button
               key={cat}
-              className={`${styles.tab} ${selectedCategory === cat ? styles.active : ''}`}
+              className={`${styles.tab} ${selectedCategory === cat ? styles.active : ""}`}
               onClick={() => setSelectedCategory(cat)}
             >
               {cat}
@@ -147,13 +147,13 @@ export function WordManager() {
                       onClick={() => handleToggleLike(word.id)}
                       className={styles.likeButton}
                     >
-                      {word.liked ? '❤️' : '🤍'}
+                      {word.liked ? "Liked" : "Like"}
                     </button>
                     <button
                       onClick={() => handleDeleteWord(word.id)}
                       className={styles.deleteButton}
                     >
-                      ✕
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -173,7 +173,7 @@ export function WordManager() {
                     onClick={() => handleToggleLike(word.id)}
                     className={styles.likeButton}
                   >
-                    {word.liked ? '❤️' : '🤍'}
+                    {word.liked ? "Liked" : "Like"}
                   </button>
                 </div>
               ))}

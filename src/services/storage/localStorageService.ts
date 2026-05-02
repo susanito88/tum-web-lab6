@@ -1,6 +1,5 @@
-import { Theme, UserPreferences } from "@/types";
+import type { Theme, UserPreferences } from "@/types";
 
-const STORAGE_KEY = "worlde_user_prefs";
 const COINS_KEY = "worlde_coins";
 const THEME_KEY = "worlde_theme";
 const STREAK_KEY = "worlde_streak";

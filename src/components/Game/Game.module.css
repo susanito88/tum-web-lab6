@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: var(--bg-color);
+  background: transparent;
   color: var(--text-color);
   transition: var(--transition);
 }
@@ -14,11 +14,13 @@
   padding: var(--spacing-md);
   border-bottom: 1px solid var(--cell-border);
   gap: var(--spacing-md);
+  background: color-mix(in srgb, var(--cell-bg) 84%, transparent);
+  backdrop-filter: blur(6px);
 }
 
 .backButton {
-  background: none;
-  border: none;
+  background: var(--cell-bg);
+  border: 1px solid var(--cell-border);
   font-size: 16px;
   cursor: pointer;
   color: var(--text-color);
@@ -29,7 +31,8 @@
 }
 
 .backButton:hover {
-  background-color: var(--cell-bg);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
 }
 
 .gameHeader h2 {
@@ -51,6 +54,7 @@
   background-color: var(--cell-bg);
   padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
+  border: 1px solid var(--cell-border);
 }
 
 .timer {
@@ -88,9 +92,10 @@
   font-size: 20px;
   font-weight: 600;
   background-color: var(--cell-bg);
-  border: 2px solid var(--cell-border);
+  border: 1px solid var(--cell-border);
   border-radius: var(--radius-md);
   transition: var(--transition);
+  box-shadow: var(--shadow);
 }
 
 .letter.correct {
@@ -129,11 +134,13 @@
   text-align: center;
   border-radius: var(--radius-md);
   font-weight: 600;
+  border: 1px solid var(--cell-border);
+  background: var(--cell-bg);
 }
 
 .submitButton {
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--correct-bg);
+  background: linear-gradient(135deg, var(--correct-bg), #7dc578);
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -141,6 +148,7 @@
   font-weight: 600;
   font-size: 16px;
   transition: var(--transition);
+  box-shadow: var(--shadow);
 }
 
 .submitButton:hover {
@@ -165,7 +173,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--cell-bg);
   color: var(--text-color);
-  border: 2px solid var(--cell-border);
+  border: 1px solid var(--cell-border);
   border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
@@ -184,13 +192,63 @@
   cursor: not-allowed;
 }
 
+.keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+}
+
+.keyboardRow {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+
+.key {
+  min-width: 34px;
+  height: 40px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--cell-border);
+  background-color: var(--cell-bg);
+  color: var(--text-color);
+  font-weight: 700;
+  font-size: 14px;
+  text-transform: uppercase;
+  box-shadow: var(--shadow);
+}
+
+.key.correct {
+  background-color: var(--correct-bg);
+  border-color: var(--correct-bg);
+  color: #fff;
+}
+
+.key.present {
+  background-color: var(--present-bg);
+  border-color: var(--present-bg);
+  color: #fff;
+}
+
+.key.absent {
+  background-color: var(--absent-bg);
+  border-color: var(--absent-bg);
+  color: #fff;
+  opacity: 0.8;
+}
+
 .message {
   color: var(--present-bg);
   font-weight: 600;
   padding: var(--spacing-md);
   background-color: var(--cell-bg);
   border-radius: var(--radius-md);
-  border: 2px solid var(--cell-border);
+  border: 1px solid var(--cell-border);
   margin-bottom: var(--spacing-md);
   text-align: center;
   animation: slideIn 0.3s ease;
@@ -212,8 +270,9 @@
   padding: var(--spacing-lg);
   background-color: var(--cell-bg);
   border-radius: var(--radius-lg);
-  border: 2px solid var(--cell-border);
+  border: 1px solid var(--cell-border);
   animation: slideIn 0.3s ease;
+  box-shadow: var(--shadow-lg);
 }
 
 .result h3 {
@@ -229,7 +288,7 @@
 
 .nextButton {
   padding: var(--spacing-md) var(--spacing-lg);
-  background-color: var(--correct-bg);
+  background: linear-gradient(135deg, var(--correct-bg), #7dc578);
   color: white;
   border: none;
   border-radius: var(--radius-md);
@@ -238,6 +297,7 @@
   font-size: 16px;
   margin-top: var(--spacing-md);
   transition: var(--transition);
+  box-shadow: var(--shadow);
 }
 
 .nextButton:hover {

@@ -5,7 +5,7 @@ export interface Word {
   category: "Easy" | "Medium" | "Hard" | "Extreme";
   length: number;
   liked: boolean;
-  addedAt: number; // timestamp
+  addedAt: number;
   isCustom: boolean;
 }
 
@@ -31,9 +31,9 @@ export interface GameState {
   won: boolean;
   timeElapsed?: number;
   hintsUsed: {
-    revealed: Set<number>; // indices of revealed letters
-    positions: Set<number>; // indices where position is revealed
-    eliminated: Set<string>; // eliminated letters
+    revealed: Set<number>;
+    positions: Set<number>;
+    eliminated: Set<string>;
   };
 }
 
@@ -56,11 +56,11 @@ export interface Statistics {
   totalGames: number;
   wins: number;
   losses: number;
+  winRate: number;
   currentStreak: number;
   longestStreak: number;
   averageGuesses: number;
-  guessDistribution: Record<number, number>; // 1-6: count of games
-  letterPositionHeatmap: Record<number, Record<string, number>>; // position: letter: count
+  guessDistribution: Record<number, number>;
   coinsEarned: number;
 }
 

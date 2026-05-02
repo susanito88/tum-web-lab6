@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { GameState, GameMode, Guess, Word } from "@/types";
+import type { GameState, GameMode, Guess, Word } from "@/types";
 
 interface GameContextType {
   gameState: GameState | null;

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getGameHistory, getStatistics } from '@/services/storage/gameHistoryDB';
-import { GameMode, Statistics as StatsType } from '@/types';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { getStatistics } from "@/services/storage/gameHistoryDB";
+import type { GameMode, Statistics as StatsType } from "@/types";
 import {
   BarChart,
   Bar,
@@ -10,12 +10,12 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from 'recharts';
-import styles from './styles/Stats.module.css';
+} from "recharts";
+import styles from "./styles/Stats.module.css";
 
 export function Statistics() {
   const navigate = useNavigate();
-  const [selectedMode, setSelectedMode] = useState<GameMode | 'all'>('all');
+  const [selectedMode, setSelectedMode] = useState<GameMode | "all">("all");
   const [stats, setStats] = useState<StatsType | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,11 +23,12 @@ export function Statistics() {
     const loadStats = async () => {
       setLoading(true);
       try {
-        const mode = selectedMode === 'all' ? undefined : (selectedMode as GameMode);
+        const mode =
+          selectedMode === "all" ? undefined : (selectedMode as GameMode);
         const data = await getStatistics(mode);
         setStats(data);
       } catch (error) {
-        console.error('Failed to load statistics:', error);
+        console.error("Failed to load statistics:", error);
       }
       setLoading(false);
     };
@@ -38,8 +39,8 @@ export function Statistics() {
     return (
       <div className={styles.stats}>
         <header className={styles.header}>
-          <button onClick={() => navigate('/')} className={styles.backButton}>
-            ← Back
+          <button onClick={() => navigate("/")} className={styles.backButton}>
+            Back
           </button>
           <h1>Statistics</h1>
           <div></div>
@@ -52,22 +53,24 @@ export function Statistics() {
   }
 
   const chartData = [
-    { guesses: '1', count: stats.guessDistribution[1] || 0 },
-    { guesses: '2', count: stats.guessDistribution[2] || 0 },
-    { guesses: '3', count: stats.guessDistribution[3] || 0 },
-    { guesses: '4', count: stats.guessDistribution[4] || 0 },
-    { guesses: '5', count: stats.guessDistribution[5] || 0 },
-    { guesses: '6', count: stats.guessDistribution[6] || 0 },
+    { guesses: "1", count: stats.guessDistribution[1] || 0 },
+    { guesses: "2", count: stats.guessDistribution[2] || 0 },
+    { guesses: "3", count: stats.guessDistribution[3] || 0 },
+    { guesses: "4", count: stats.guessDistribution[4] || 0 },
+    { guesses: "5", count: stats.guessDistribution[5] || 0 },
+    { guesses: "6", count: stats.guessDistribution[6] || 0 },
   ];
 
   const winRate =
-    stats.totalGames > 0 ? ((stats.wins / stats.totalGames) * 100).toFixed(1) : 0;
+    stats.totalGames > 0
+      ? ((stats.wins / stats.totalGames) * 100).toFixed(1)
+      : 0;
 
   return (
     <div className={styles.stats}>
       <header className={styles.header}>
-        <button onClick={() => navigate('/')} className={styles.backButton}>
-          ← Back
+        <button onClick={() => navigate("/")} className={styles.backButton}>
+          Back
         </button>
         <h1>Statistics</h1>
         <div></div>
@@ -77,35 +80,35 @@ export function Statistics() {
         <div className={styles.modeFilter}>
           <button
             className={`${styles.modeFilterButton} ${
-              selectedMode === 'all' ? styles.active : ''
+              selectedMode === "all" ? styles.active : ""
             }`}
-            onClick={() => setSelectedMode('all')}
+            onClick={() => setSelectedMode("all")}
           >
             All Games
           </button>
           <button
             className={`${styles.modeFilterButton} ${
-              selectedMode === 'classic' ? styles.active : ''
+              selectedMode === "classic" ? styles.active : ""
             }`}
-            onClick={() => setSelectedMode('classic')}
+            onClick={() => setSelectedMode("classic")}
           >
             Classic
           </button>
           <button
             className={`${styles.modeFilterButton} ${
-              selectedMode === 'speed' ? styles.active : ''
+              selectedMode === "speed" ? styles.active : ""
             }`}
-            onClick={() => setSelectedMode('speed')}
+            onClick={() => setSelectedMode("speed")}
           >
-            Speed ⚡
+            Speed
           </button>
           <button
             className={`${styles.modeFilterButton} ${
-              selectedMode === 'hardcore' ? styles.active : ''
+              selectedMode === "hardcore" ? styles.active : ""
             }`}
-            onClick={() => setSelectedMode('hardcore')}
+            onClick={() => setSelectedMode("hardcore")}
           >
-            Hardcore 🔥
+            Hardcore
           </button>
         </div>
 
@@ -151,9 +154,9 @@ export function Statistics() {
                 <YAxis stroke="var(--text-color)" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'var(--cell-bg)',
+                    backgroundColor: "var(--cell-bg)",
                     border: `1px solid var(--cell-border)`,
-                    color: 'var(--text-color)',
+                    color: "var(--text-color)",
                   }}
                 />
                 <Bar dataKey="count" fill="var(--correct-bg)" />

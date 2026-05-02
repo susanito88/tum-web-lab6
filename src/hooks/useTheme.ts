@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Theme } from "@/types";
+import type { Theme } from "@/types";
 import {
   localStorageService,
   applyTheme,
