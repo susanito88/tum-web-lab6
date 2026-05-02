@@ -5,7 +5,7 @@ let db: any = null;
 let dictionaryCache: Set<string> | null = null;
 
 const DB_NAME = "WordleDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const DICTIONARY_VERSION_KEY = "wordle.dictionary.version";
 
 const WORD_ENCODING_TAG = "WDL1";
@@ -224,6 +224,20 @@ export async function initWordsDB(): Promise<void> {
         const store = db.createObjectStore("words", { keyPath: "id" });
         store.createIndex("by-category", "category");
         store.createIndex("by-isCustom", "isCustom");
+      } else {
+        const store = tx.objectStore("words");
+        if (!store.indexNames.contains("by-category")) {
+          store.createIndex("by-category", "category");
+        }
+        if (!store.indexNames.contains("by-isCustom")) {
+          store.createIndex("by-isCustom", "isCustom");
+        }
+      }
+
+      if (!db.objectStoreNames.contains("history")) {
+        const historyStore = db.createObjectStore("history", { keyPath: "id" });
+        historyStore.createIndex("by-gameMode", "gameMode");
+        historyStore.createIndex("by-playedAt", "playedAt");
       }
 
       // Migrate plain-text words from earlier versions.
@@ -349,7 +363,9 @@ async function loadDictionaryVersion(): Promise<string> {
   return dictionaryData.version;
 }
 
-async function syncDictionaryDefaults(dictionaryVersion: string): Promise<void> {
+async function syncDictionaryDefaults(
+  dictionaryVersion: string,
+): Promise<void> {
   if (!db) return;
 
   const previousVersion = localStorage.getItem(DICTIONARY_VERSION_KEY);
@@ -576,4 +592,3 @@ export async function isWordInDictionary(word: string): Promise<boolean> {
 
   return dictionaryCache.has(normalized);
 }
-

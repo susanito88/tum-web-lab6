@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Word, GameMode } from "@/types";
-import { getWordsByCategory } from "@/services/storage/wordsDB";
 import { useCoins } from "@/hooks/useCoins";
 import styles from "./styles/Home.module.css";
 
@@ -14,12 +13,7 @@ export function Home() {
     useState<Word["category"]>("Easy");
   const [selectedMode, setSelectedMode] = useState<GameMode>("classic");
 
-  const handleStartGame = async () => {
-    const words = await getWordsByCategory(selectedCategory);
-    if (words.length === 0) {
-      alert("No words available in this category");
-      return;
-    }
+  const handleStartGame = () => {
     navigate(`/game/${selectedCategory}/${selectedMode}`);
   };
 

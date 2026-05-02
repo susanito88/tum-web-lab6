@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
+import { resetGameHistoryDB } from "@/services/storage/gameHistoryDB";
 import styles from "./styles/Settings.module.css";
 
 export const Settings: React.FC = () => {
@@ -14,14 +15,14 @@ export const Settings: React.FC = () => {
     setTimeout(() => setNotification(""), 2000);
   };
 
-  const handleResetStats = () => {
+  const handleResetStats = async () => {
     if (
       confirm(
         "Are you sure you want to reset all statistics? This cannot be undone.",
       )
     ) {
-      // Clear IndexedDB game history
-      indexedDB.deleteDatabase("WordleDB");
+      // Clear IndexedDB game history safely by closing active DB connections first.
+      await resetGameHistoryDB();
       // Clear localStorage stats
       localStorage.removeItem("worlde_streak");
       localStorage.removeItem("worlde_coins");
@@ -43,14 +44,14 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleClearAllData = () => {
+  const handleClearAllData = async () => {
     if (
       confirm(
         "Are you ABSOLUTELY sure you want to reset EVERYTHING? This includes all stats, coins, and custom words.",
       )
     ) {
       localStorage.clear();
-      indexedDB.deleteDatabase("WordleDB");
+      await resetGameHistoryDB();
       setNotification("All data cleared!");
       setTimeout(() => window.location.reload(), 1000);
     }

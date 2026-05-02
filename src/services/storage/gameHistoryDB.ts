@@ -4,7 +4,7 @@ import type { GameHistoryEntry, Statistics, GameMode } from "@/types";
 let db: any = null;
 
 const DB_NAME = "WordleDB";
-const DB_VERSION = 1;
+const DB_VERSION = 3;
 
 export async function initGameHistoryDB(): Promise<void> {
   if (db) return;
@@ -16,7 +16,32 @@ export async function initGameHistoryDB(): Promise<void> {
         store.createIndex("by-gameMode", "gameMode");
         store.createIndex("by-playedAt", "playedAt");
       }
+
+      if (!db.objectStoreNames.contains("words")) {
+        const wordsStore = db.createObjectStore("words", { keyPath: "id" });
+        wordsStore.createIndex("by-category", "category");
+        wordsStore.createIndex("by-isCustom", "isCustom");
+      }
     },
+  });
+}
+
+export async function resetGameHistoryDB(): Promise<void> {
+  if (db) {
+    db.close();
+    db = null;
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => {
+      // Avoid hanging reset flow if another tab keeps DB open.
+      console.warn("WordleDB deletion blocked by another open connection");
+      resolve();
+    };
   });
 }
 
