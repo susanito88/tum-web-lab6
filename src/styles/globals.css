@@ -1,0 +1,257 @@
+:root {
+  /* Light Theme (default) */
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --cell-bg: #f3f3f3;
+  --cell-border: #d3d6da;
+  --key-bg: #d3d6da;
+  --correct-bg: #6aaa64;
+  --present-bg: #c9b458;
+  --absent-bg: #787c7e;
+
+  /* Typography */
+  --sans: system-ui, "Segoe UI", Roboto, -apple-system, sans-serif;
+  --heading: system-ui, "Segoe UI", Roboto, -apple-system, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  /* Spacing & Layout */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+
+  /* Shadows */
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.15);
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* Transitions */
+  --transition: all 0.2s ease;
+}
+
+/* Dark Theme */
+:root.dark {
+  --bg-color: #121213;
+  --text-color: #ffffff;
+  --cell-bg: #1a1a1a;
+  --cell-border: #3a3a3c;
+  --key-bg: #3a3a3c;
+  --correct-bg: #6aaa64;
+  --present-bg: #c9b458;
+  --absent-bg: #565758;
+}
+
+/* Colorblind Theme */
+:root.colorblind {
+  --bg-color: #ffffff;
+  --text-color: #000000;
+  --cell-bg: #f3f3f3;
+  --cell-border: #d3d6da;
+  --key-bg: #d3d6da;
+  --correct-bg: #0066cc;
+  --present-bg: #ff6600;
+  --absent-bg: #787c7e;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font: 16px/1.5 var(--sans);
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  color-scheme: light dark;
+  transition: var(--transition);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--heading);
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+h1 {
+  font-size: clamp(28px, 5vw, 48px);
+  line-height: 1.2;
+}
+h2 {
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.3;
+}
+h3 {
+  font-size: clamp(20px, 3vw, 28px);
+  line-height: 1.4;
+}
+
+p {
+  line-height: 1.6;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+input,
+textarea {
+  border: 1px solid var(--cell-border);
+  background-color: var(--cell-bg);
+  color: var(--text-color);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--correct-bg);
+  box-shadow: 0 0 0 3px rgba(106, 170, 100, 0.1);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cell-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--key-bg);
+}
+
+/* Utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+  width: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+.gap-md {
+  gap: var(--spacing-md);
+}
+.gap-lg {
+  gap: var(--spacing-lg);
+}
+
+.p-sm {
+  padding: var(--spacing-sm);
+}
+.p-md {
+  padding: var(--spacing-md);
+}
+.p-lg {
+  padding: var(--spacing-lg);
+}
+
+.m-sm {
+  margin: var(--spacing-sm);
+}
+.m-md {
+  margin: var(--spacing-md);
+}
+.m-lg {
+  margin: var(--spacing-lg);
+}
+
+.mt-sm {
+  margin-top: var(--spacing-sm);
+}
+.mt-md {
+  margin-top: var(--spacing-md);
+}
+.mt-lg {
+  margin-top: var(--spacing-lg);
+}
+
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
+}
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
+
+.text-center {
+  text-align: center;
+}
+.text-right {
+  text-align: right;
+}
+.text-left {
+  text-align: left;
+}
+
+.hidden {
+  display: none !important;
+}

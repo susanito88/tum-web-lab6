@@ -2,7 +2,7 @@
 export interface Word {
   id: string;
   word: string;
-  category: 'Easy' | 'Medium' | 'Hard' | 'Extreme';
+  category: "Easy" | "Medium" | "Hard" | "Extreme";
   length: number;
   liked: boolean;
   addedAt: number; // timestamp
@@ -10,7 +10,7 @@ export interface Word {
 }
 
 // Game modes
-export type GameMode = 'classic' | 'speed' | 'hardcore';
+export type GameMode = "classic" | "speed" | "hardcore";
 
 // Guess tracking
 export interface Guess {
@@ -18,14 +18,14 @@ export interface Guess {
   result: LetterResult[];
 }
 
-export type LetterResult = 'correct' | 'present' | 'absent';
+export type LetterResult = "correct" | "present" | "absent";
 
 // Game state
 export interface GameState {
   targetWord: string;
   guesses: Guess[];
   gameMode: GameMode;
-  category: Word['category'];
+  category: Word["category"];
   startTime: number;
   endTime?: number;
   won: boolean;
@@ -42,7 +42,7 @@ export interface GameHistoryEntry {
   id: string;
   word: string;
   gameMode: GameMode;
-  category: Word['category'];
+  category: Word["category"];
   won: boolean;
   guessCount: number;
   timeElapsed: number;
@@ -66,12 +66,12 @@ export interface Statistics {
 
 // Hint types
 export interface Hint {
-  type: 'reveal' | 'position' | 'eliminate';
+  type: "reveal" | "position" | "eliminate";
   cost: number;
 }
 
 // Theme
-export type Theme = 'light' | 'dark' | 'colorblind';
+export type Theme = "light" | "dark" | "colorblind";
 
 // User preferences
 export interface UserPreferences {

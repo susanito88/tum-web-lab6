@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { GameState, GameMode, Guess, Word } from '@/types';
+import React, { createContext, useContext, useState, useCallback } from "react";
+import { GameState, GameMode, Guess, Word } from "@/types";
 
 interface GameContextType {
   gameState: GameState | null;
@@ -33,25 +33,28 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const addGuess = useCallback((guess: string) => {
-    if (!gameState) return false;
-    if (gameState.won || gameState.guesses.length >= 6) return false;
+  const addGuess = useCallback(
+    (guess: string) => {
+      if (!gameState) return false;
+      if (gameState.won || gameState.guesses.length >= 6) return false;
 
-    // This will be properly evaluated when we build the game component
-    const newGuesses: Guess[] = [
-      ...gameState.guesses,
-      {
-        word: guess,
-        result: [],
-      },
-    ];
+      // This will be properly evaluated when we build the game component
+      const newGuesses: Guess[] = [
+        ...gameState.guesses,
+        {
+          word: guess,
+          result: [],
+        },
+      ];
 
-    setGameState(prev => prev ? { ...prev, guesses: newGuesses } : null);
-    return true;
-  }, [gameState]);
+      setGameState((prev) => (prev ? { ...prev, guesses: newGuesses } : null));
+      return true;
+    },
+    [gameState],
+  );
 
   const revealLetter = useCallback((index: number) => {
-    setGameState(prev =>
+    setGameState((prev) =>
       prev
         ? {
             ...prev,
@@ -60,12 +63,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
               revealed: new Set([...prev.hintsUsed.revealed, index]),
             },
           }
-        : null
+        : null,
     );
   }, []);
 
   const revealPosition = useCallback((index: number) => {
-    setGameState(prev =>
+    setGameState((prev) =>
       prev
         ? {
             ...prev,
@@ -74,12 +77,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
               positions: new Set([...prev.hintsUsed.positions, index]),
             },
           }
-        : null
+        : null,
     );
   }, []);
 
   const eliminateLetters = useCallback((letters: Set<string>) => {
-    setGameState(prev =>
+    setGameState((prev) =>
       prev
         ? {
             ...prev,
@@ -88,19 +91,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
               eliminated: new Set([...prev.hintsUsed.eliminated, ...letters]),
             },
           }
-        : null
+        : null,
     );
   }, []);
 
   const endGame = useCallback((won: boolean) => {
-    setGameState(prev =>
+    setGameState((prev) =>
       prev
         ? {
             ...prev,
             won,
             endTime: Date.now(),
           }
-        : null
+        : null,
     );
   }, []);
 
@@ -129,7 +132,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 export function useGame() {
   const context = useContext(GameContext);
   if (!context) {
-    throw new Error('useGame must be used within GameProvider');
+    throw new Error("useGame must be used within GameProvider");
   }
   return context;
 }
