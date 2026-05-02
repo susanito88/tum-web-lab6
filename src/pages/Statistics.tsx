@@ -18,10 +18,12 @@ export function Statistics() {
   const [selectedMode, setSelectedMode] = useState<GameMode | "all">("all");
   const [stats, setStats] = useState<StatsType | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStats = async () => {
       setLoading(true);
+      setError(null);
       try {
         const mode =
           selectedMode === "all" ? undefined : (selectedMode as GameMode);
@@ -29,13 +31,15 @@ export function Statistics() {
         setStats(data);
       } catch (error) {
         console.error("Failed to load statistics:", error);
+        setStats(null);
+        setError("Could not load statistics. Please try again.");
       }
       setLoading(false);
     };
     loadStats();
   }, [selectedMode]);
 
-  if (loading || !stats) {
+  if (loading) {
     return (
       <div className={styles.stats}>
         <header className={styles.header}>
@@ -47,6 +51,23 @@ export function Statistics() {
         </header>
         <main className={styles.main}>
           <p>Loading...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (error || !stats) {
+    return (
+      <div className={styles.stats}>
+        <header className={styles.header}>
+          <button onClick={() => navigate("/")} className={styles.backButton}>
+            Back
+          </button>
+          <h1>Statistics</h1>
+          <div></div>
+        </header>
+        <main className={styles.main}>
+          <p>{error ?? "Could not load statistics."}</p>
         </main>
       </div>
     );
