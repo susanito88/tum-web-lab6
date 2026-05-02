@@ -8,15 +8,76 @@ const DB_NAME = "WordleDB";
 const DB_VERSION = 2;
 
 const WORD_ENCODING_TAG = "WDL1";
+const WORD_CIPHER_TAG = "WDL2";
+const KEY_MATERIAL = "wordle-client-dictionary-key-v1";
+const KEY_SALT = "wordle-client-dictionary-salt-v1";
 
 type StoredWord = Omit<Word, "word"> & { word: string };
+let encryptionKeyPromise: Promise<CryptoKey> | null = null;
 
-function encodeWord(word: string): string {
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const b of bytes) {
+    binary += String.fromCharCode(b);
+  }
+  return btoa(binary).replace(/=+$/g, "");
+}
+
+function fromBase64(value: string): Uint8Array {
+  const padded = value.padEnd(Math.ceil(value.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+}
+
+function isEncryptedWord(value: string): boolean {
+  return value.startsWith(`${WORD_CIPHER_TAG}:`);
+}
+
+async function getEncryptionKey(): Promise<CryptoKey> {
+  if (!encryptionKeyPromise) {
+    const enc = new TextEncoder();
+    const baseKey = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(KEY_MATERIAL),
+      "PBKDF2",
+      false,
+      ["deriveKey"],
+    );
+
+    encryptionKeyPromise = crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        hash: "SHA-256",
+        salt: enc.encode(KEY_SALT),
+        iterations: 120000,
+      },
+      baseKey,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"],
+    );
+  }
+
+  return encryptionKeyPromise;
+}
+
+function encodeLegacyWord(word: string): string {
   const payload = `${word.toUpperCase()}|${WORD_ENCODING_TAG}`;
   return btoa(payload).replace(/=+$/g, "");
 }
 
-function decodeWord(value: string): string {
+function decodeLegacyWord(value: string): string {
   if (!value) return "";
   if (/^[A-Z]+$/.test(value)) return value;
 
@@ -38,11 +99,73 @@ function decodeWord(value: string): string {
   }
 }
 
-function toPublicWord(stored: StoredWord): Word {
+async function encryptWord(word: string): Promise<string> {
+  const normalized = word.trim().toUpperCase();
+  const key = await getEncryptionKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const data = new TextEncoder().encode(normalized);
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: toArrayBuffer(iv) },
+    key,
+    toArrayBuffer(data),
+  );
+
+  return `${WORD_CIPHER_TAG}:${toBase64(iv)}:${toBase64(new Uint8Array(encrypted))}`;
+}
+
+async function decryptWord(value: string): Promise<string> {
+  if (!value) return "";
+
+  if (isEncryptedWord(value)) {
+    try {
+      const [tag, ivEncoded, payloadEncoded] = value.split(":");
+      if (tag !== WORD_CIPHER_TAG || !ivEncoded || !payloadEncoded) {
+        return value.toUpperCase();
+      }
+
+      const iv = fromBase64(ivEncoded);
+      const payload = fromBase64(payloadEncoded);
+      const key = await getEncryptionKey();
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: toArrayBuffer(iv) },
+        key,
+        toArrayBuffer(payload),
+      );
+
+      return new TextDecoder().decode(decrypted).toUpperCase();
+    } catch {
+      return value.toUpperCase();
+    }
+  }
+
+  return decodeLegacyWord(value);
+}
+
+async function toPublicWord(stored: StoredWord): Promise<Word> {
   return {
     ...stored,
-    word: decodeWord(stored.word),
+    word: await decryptWord(stored.word),
   };
+}
+
+async function migrateWordsToEncryption(): Promise<void> {
+  if (!db) return;
+
+  const tx = db.transaction("words", "readwrite");
+  let cursor = await tx.store.openCursor();
+
+  while (cursor) {
+    const value = cursor.value as StoredWord;
+    if (value?.word && !isEncryptedWord(value.word)) {
+      const plainWord = await decryptWord(value.word);
+      value.word = await encryptWord(plainWord);
+      await cursor.update(value);
+    }
+    cursor = await cursor.continue();
+  }
+
+  await tx.done;
+  dictionaryCache = null;
 }
 
 export async function initWordsDB(): Promise<void> {
@@ -64,7 +187,7 @@ export async function initWordsDB(): Promise<void> {
         while (cursor) {
           const value = cursor.value as StoredWord;
           if (value?.word && /^[A-Z]+$/.test(value.word)) {
-            value.word = encodeWord(value.word);
+            value.word = encodeLegacyWord(value.word);
             await cursor.update(value);
           }
           cursor = await cursor.continue();
@@ -74,6 +197,7 @@ export async function initWordsDB(): Promise<void> {
   });
 
   await ensureDefaultWords();
+  await migrateWordsToEncryption();
 }
 
 const COMMON_WORDS = [
@@ -444,32 +568,23 @@ const DEFAULT_WORDS: Record<Word["category"], string[]> = {
   Extreme: COMMON_WORDS.slice(330),
 };
 
-const DEFAULT_WORDS_ENCODED = Object.fromEntries(
-  Object.entries(DEFAULT_WORDS).map(([category, words]) => [
-    category,
-    words.map((word) => encodeWord(word)),
-  ]),
-) as Record<Word["category"], string[]>;
-
 async function ensureDefaultWords(): Promise<void> {
   if (!db) return;
 
   const tx = db.transaction("words", "readwrite");
   const now = Date.now();
 
-  for (const [category, encodedWords] of Object.entries(
-    DEFAULT_WORDS_ENCODED,
-  )) {
-    for (const encodedWord of encodedWords) {
-      const decodedWord = decodeWord(encodedWord);
-      const id = `${category.toLowerCase()}-${decodedWord.toLowerCase()}`;
+  for (const [category, words] of Object.entries(DEFAULT_WORDS)) {
+    for (const plainWord of words) {
+      const normalizedWord = plainWord.toUpperCase();
+      const id = `${category.toLowerCase()}-${normalizedWord.toLowerCase()}`;
       const existing = await tx.store.get(id);
       if (!existing) {
         const wordObj: StoredWord = {
           id,
-          word: encodedWord,
+          word: await encryptWord(normalizedWord),
           category: category as Word["category"],
-          length: decodedWord.length,
+          length: normalizedWord.length,
           liked: false,
           addedAt: now,
           isCustom: false,
@@ -492,7 +607,7 @@ export async function addWord(
 
   const wordObj: StoredWord = {
     ...word,
-    word: encodeWord(normalizedWord),
+    word: await encryptWord(normalizedWord),
     id: `custom-${Date.now()}`,
     addedAt: Date.now(),
   };
@@ -528,7 +643,7 @@ export async function getWordsByCategory(
     "by-category",
     category,
   )) as StoredWord[];
-  return allWords.map(toPublicWord);
+  return Promise.all(allWords.map(toPublicWord));
 }
 
 export async function getRandomWord(category: Word["category"]): Promise<Word> {
@@ -553,7 +668,7 @@ export async function getAllWords(): Promise<Word[]> {
   if (!db) throw new Error("Failed to initialize DB");
 
   const words = (await db.getAll("words")) as StoredWord[];
-  return words.map(toPublicWord);
+  return Promise.all(words.map(toPublicWord));
 }
 
 export async function isWordInDictionary(word: string): Promise<boolean> {
