@@ -5,21 +5,49 @@ import { getWordsByCategory } from "@/services/storage/wordsDB";
 import { useCoins } from "@/hooks/useCoins";
 import styles from "./styles/Home.module.css";
 
+const CATEGORIES = ["Easy", "Medium", "Hard", "Extreme"] as const;
+type CategoryCounts = Record<Word["category"], number>;
+
+const INITIAL_COUNTS: CategoryCounts = {
+  Easy: 0,
+  Medium: 0,
+  Hard: 0,
+  Extreme: 0,
+};
+
 export function Home() {
   const navigate = useNavigate();
   const { coins } = useCoins();
   const [selectedCategory, setSelectedCategory] =
     useState<Word["category"]>("Easy");
   const [selectedMode, setSelectedMode] = useState<GameMode>("classic");
-  const [wordCount, setWordCount] = useState(0);
+  const [wordCounts, setWordCounts] = useState<CategoryCounts>(INITIAL_COUNTS);
 
   useEffect(() => {
-    const loadWordCount = async () => {
-      const words = await getWordsByCategory(selectedCategory);
-      setWordCount(words.length);
+    const loadWordCounts = async () => {
+      try {
+        const categoryEntries = await Promise.all(
+          CATEGORIES.map(async (category) => {
+            const words = await getWordsByCategory(category);
+            return [category, words.length] as const;
+          }),
+        );
+
+        setWordCounts(
+          categoryEntries.reduce<CategoryCounts>(
+            (acc, [category, count]) => {
+              acc[category] = count;
+              return acc;
+            },
+            { ...INITIAL_COUNTS },
+          ),
+        );
+      } catch {
+        setWordCounts(INITIAL_COUNTS);
+      }
     };
-    loadWordCount();
-  }, [selectedCategory]);
+    loadWordCounts();
+  }, []);
 
   const handleStartGame = async () => {
     const words = await getWordsByCategory(selectedCategory);
@@ -64,20 +92,20 @@ export function Home() {
         <section className={styles.section}>
           <h2>Select Difficulty</h2>
           <div className={styles.grid}>
-            {(["Easy", "Medium", "Hard", "Extreme"] as const).map(
-              (category) => (
-                <button
-                  key={category}
-                  className={`${styles.card} ${
-                    selectedCategory === category ? styles.active : ""
-                  }`}
-                  onClick={() => setSelectedCategory(category)}
-                >
-                  <div className={styles.cardTitle}>{category}</div>
-                  <div className={styles.cardCount}>{wordCount} words</div>
-                </button>
-              ),
-            )}
+            {CATEGORIES.map((category) => (
+              <button
+                key={category}
+                className={`${styles.card} ${
+                  selectedCategory === category ? styles.active : ""
+                }`}
+                onClick={() => setSelectedCategory(category)}
+              >
+                <div className={styles.cardTitle}>{category}</div>
+                <div className={styles.cardCount}>
+                  {wordCounts[category]} words
+                </div>
+              </button>
+            ))}
           </div>
         </section>
 
@@ -109,7 +137,7 @@ export function Home() {
               onClick={() => setSelectedMode("hardcore")}
             >
               <h3>Hardcore</h3>
-              <p>No hints, hard mode only</p>
+              <p>Shows only if letters exist, not positions</p>
             </div>
           </div>
         </section>

@@ -160,6 +160,14 @@
   opacity: 0.8;
 }
 
+.modeHint {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  opacity: 0.85;
+}
+
 .startButton {
   width: 100%;
   padding: var(--spacing-lg);
