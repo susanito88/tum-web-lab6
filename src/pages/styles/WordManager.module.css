@@ -175,6 +175,13 @@
 
 .wordActions {
   display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  width: 100%;
+}
+
+.primaryActions {
+  display: flex;
   gap: var(--spacing-sm);
   width: 100%;
 }
@@ -200,6 +207,214 @@
   background-color: var(--absent-bg);
   border-color: var(--absent-bg);
   color: white;
+}
+
+.challengeButton {
+  width: 100%;
+  padding: var(--spacing-sm);
+  background-color: transparent;
+  border: 1px solid var(--cell-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.challengeButton:hover {
+  background-color: var(--correct-bg);
+  border-color: var(--correct-bg);
+  color: white;
+}
+
+.challengeOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.challengeModal {
+  width: min(500px, 95vw);
+  max-height: 80vh;
+  overflow-y: auto;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border: 1px solid var(--cell-border);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.challengeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--cell-border);
+  background: linear-gradient(135deg, var(--cell-bg), var(--cell-bg));
+}
+
+.challengeHeader h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.challengeClose {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--cell-border);
+  background: var(--cell-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 800;
+  transition: all 0.2s ease;
+}
+
+.challengeClose:hover {
+  background: var(--absent-bg);
+  color: white;
+}
+
+.challengeBody {
+  padding: 18px;
+}
+
+.challengeBody p {
+  margin: 0 0 12px;
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.modePicker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  justify-content: center;
+}
+
+.modePickerButton {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--cell-border);
+  background: var(--cell-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.modePickerButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.activeMode {
+  background: linear-gradient(135deg, var(--correct-bg), #7dc578);
+  border-color: var(--correct-bg);
+  color: white;
+  box-shadow: 0 4px 12px rgba(108, 177, 125, 0.3);
+}
+
+.challengeLinkBox {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.challengeLinkInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--cell-border);
+  border-radius: 6px;
+  background-color: var(--cell-bg);
+  color: var(--text-color);
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.challengeCopyButton,
+.challengeStartButton {
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.challengeCopyButton {
+  background: var(--cell-bg);
+  border: 1px solid var(--cell-border);
+  color: var(--text-color);
+}
+
+.challengeCopyButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.challengeStartButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(108, 177, 125, 0.3);
+}
+
+.challengeStartButton {
+  width: 100%;
+  background: linear-gradient(135deg, var(--correct-bg), #7dc578);
+  color: white;
+}
+
+.challengeActions {
+  margin-top: 0;
+}
+
+@media (max-width: 480px) {
+  .challengeModal {
+    width: 100%;
+    border-radius: 8px;
+  }
+
+  .challengeLinkBox {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .challengeCopyButton {
+    width: 100%;
+  }
 }
 
 .emptyState {

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirect</title>
+    <script type="text/javascript">
+      const pathname = window.location.pathname;
+      const search = window.location.search;
+      const segments = pathname.split('/').filter(Boolean);
+      const repoName = segments[0] || '';
+      const appPath = segments.slice(1).join('/');
+
+      if (repoName) {
+        const hashRoute = appPath ? `#/` + appPath + search : '#/';
+        window.location.replace('/' + repoName + '/' + hashRoute);
+      } else {
+        window.location.replace('/');
+      }
+    </script>
+  </head>
+  <body />
+</html>

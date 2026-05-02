@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import { initWordsDB } from "@/services/storage/wordsDB";
 import { initGameHistoryDB } from "@/services/storage/gameHistoryDB";
 import { useTheme } from "@/hooks/useTheme";

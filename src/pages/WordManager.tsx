@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Word } from "@/types";
+import type { GameMode } from "@/types";
 import {
   addWord,
   deleteWord,
@@ -8,6 +9,15 @@ import {
   getWordsByCategory,
 } from "@/services/storage/wordsDB";
 import styles from "./styles/WordManager.module.css";
+
+const CHALLENGE_MODES: GameMode[] = ["classic", "speed", "hardcore"];
+
+function encodeChallengeWord(word: string): string {
+  return btoa(word.toUpperCase())
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
 
 export function WordManager() {
   const navigate = useNavigate();
@@ -17,6 +27,9 @@ export function WordManager() {
   const [search, setSearch] = useState("");
   const [newWord, setNewWord] = useState("");
   const [message, setMessage] = useState("");
+  const [challengeWord, setChallengeWord] = useState<Word | null>(null);
+  const [challengeMode, setChallengeMode] = useState<GameMode>("classic");
+  const [copyStatus, setCopyStatus] = useState("");
 
   useEffect(() => {
     loadWords();
@@ -77,6 +90,37 @@ export function WordManager() {
     } catch (error) {
       console.error("Failed to toggle like:", error);
     }
+  };
+
+  const handleOpenChallenge = (word: Word) => {
+    setChallengeWord(word);
+    setChallengeMode("classic");
+    setCopyStatus("");
+  };
+
+  const buildChallengeLink = (word: Word, mode: GameMode) => {
+    const token = encodeChallengeWord(word.word);
+    return `${window.location.origin}${import.meta.env.BASE_URL}#/game/${word.category}/${mode}?challenge=${token}`;
+  };
+
+  const handleCopyChallengeLink = async () => {
+    if (!challengeWord) return;
+
+    const link = buildChallengeLink(challengeWord, challengeMode);
+
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopyStatus("Link copied");
+    } catch {
+      setCopyStatus(link);
+    }
+  };
+
+  const handleStartChallenge = () => {
+    if (!challengeWord) return;
+    navigate(
+      `/game/${challengeWord.category}/${challengeMode}?challenge=${encodeChallengeWord(challengeWord.word)}`,
+    );
   };
 
   const filteredWords = words.filter((w) =>
@@ -143,18 +187,28 @@ export function WordManager() {
                 <div key={word.id} className={styles.wordCard}>
                   <div className={styles.wordText}>{word.word}</div>
                   <div className={styles.wordActions}>
-                    <button
-                      onClick={() => handleToggleLike(word.id)}
-                      className={styles.likeButton}
-                    >
-                      {word.liked ? "Liked" : "Like"}
-                    </button>
-                    <button
-                      onClick={() => handleDeleteWord(word.id)}
-                      className={styles.deleteButton}
-                    >
-                      Delete
-                    </button>
+                    <div className={styles.primaryActions}>
+                      <button
+                        onClick={() => handleToggleLike(word.id)}
+                        className={styles.likeButton}
+                      >
+                        {word.liked ? "Liked" : "Like"}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteWord(word.id)}
+                        className={styles.deleteButton}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    {word.liked && (
+                      <button
+                        onClick={() => handleOpenChallenge(word)}
+                        className={styles.challengeButton}
+                      >
+                        Challenge
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -169,12 +223,24 @@ export function WordManager() {
               {defaultWords.map((word) => (
                 <div key={word.id} className={styles.wordCard}>
                   <div className={styles.wordText}>{word.word}</div>
-                  <button
-                    onClick={() => handleToggleLike(word.id)}
-                    className={styles.likeButton}
-                  >
-                    {word.liked ? "Liked" : "Like"}
-                  </button>
+                  <div className={styles.wordActions}>
+                    <div className={styles.primaryActions}>
+                      <button
+                        onClick={() => handleToggleLike(word.id)}
+                        className={styles.likeButton}
+                      >
+                        {word.liked ? "Liked" : "Like"}
+                      </button>
+                    </div>
+                    {word.liked && (
+                      <button
+                        onClick={() => handleOpenChallenge(word)}
+                        className={styles.challengeButton}
+                      >
+                        Challenge
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -187,6 +253,80 @@ export function WordManager() {
           </div>
         )}
       </main>
+
+      {challengeWord && (
+        <div
+          className={styles.challengeOverlay}
+          onClick={() => setChallengeWord(null)}
+          role="presentation"
+        >
+          <div
+            className={styles.challengeModal}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Challenge a friend"
+          >
+            <div className={styles.challengeHeader}>
+              <h3>Challenge a Friend</h3>
+              <button
+                className={styles.challengeClose}
+                onClick={() => setChallengeWord(null)}
+                aria-label="Close challenge dialog"
+              >
+                x
+              </button>
+            </div>
+
+            <div className={styles.challengeBody}>
+              <p>
+                Word: <strong>{challengeWord.word}</strong>
+              </p>
+              <p>Choose a mode and share the link with your friend.</p>
+
+              <div className={styles.modePicker}>
+                {CHALLENGE_MODES.map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    className={`${styles.modePickerButton} ${challengeMode === mode ? styles.activeMode : ""}`}
+                    onClick={() => setChallengeMode(mode)}
+                  >
+                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                  </button>
+                ))}
+              </div>
+
+              <div className={styles.challengeLinkBox}>
+                <input
+                  readOnly
+                  value={buildChallengeLink(challengeWord, challengeMode)}
+                  className={styles.challengeLinkInput}
+                />
+                <button
+                  type="button"
+                  className={styles.challengeCopyButton}
+                  onClick={handleCopyChallengeLink}
+                >
+                  Copy Link
+                </button>
+              </div>
+
+              {copyStatus && <div className={styles.message}>{copyStatus}</div>}
+
+              <div className={styles.challengeActions}>
+                <button
+                  type="button"
+                  className={styles.challengeStartButton}
+                  onClick={handleStartChallenge}
+                >
+                  Start Challenge Here
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
