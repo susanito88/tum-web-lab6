@@ -1,93 +1,223 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { Word, GameMode } from "@/types";
-import { getRandomWord } from "@/services/storage/wordsDB";
-import { addGameToHistory } from "@/services/storage/gameHistoryDB";
-import { useCoins, useStreak } from "@/hooks/useCoins";
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Word, GameMode, Guess } from '@/types';
+import { getRandomWord } from '@/services/storage/wordsDB';
+import { addGameToHistory } from '@/services/storage/gameHistoryDB';
+import { useCoins, useStreak } from '@/hooks/useCoins';
 import {
   evaluateGuess,
   calculateCoinsEarned,
   getDifficultyNumber,
-} from "@/utils/gameUtils";
-import styles from "./Game.module.css";
+  isValidWord,
+  getKeyboardState,
+} from '@/utils/gameUtils';
+import { localStorageService } from '@/services/storage/localStorageService';
+import styles from './Game.module.css';
 
 export function GameComponent() {
   const { category, mode } = useParams<{ category: string; mode: string }>();
   const navigate = useNavigate();
-  const { addCoins } = useCoins();
+  const { addCoins, coins, spendCoins } = useCoins();
   const { incrementStreak } = useStreak();
 
   const [word, setWord] = useState<Word | null>(null);
-  const [guesses, setGuesses] = useState<string[]>([]);
-  const [currentGuess, setCurrentGuess] = useState("");
+  const [guesses, setGuesses] = useState<Guess[]>([]);
+  const [currentGuess, setCurrentGuess] = useState('');
   const [gameWon, setGameWon] = useState(false);
   const [gameLost, setGameLost] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState('');
+  const [hintsRemaining, setHintsRemaining] = useState({
+    reveal: 5,
+    position: 5,
+    eliminate: 5,
+  });
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [timerActive, setTimerActive] = useState(true);
 
   useEffect(() => {
     const initGame = async () => {
       try {
-        const randomWord = await getRandomWord(category as Word["category"]);
+        const randomWord = await getRandomWord(category as Word['category']);
         setWord(randomWord);
+        localStorageService.setLastPlayedAt(Date.now());
       } catch (error) {
-        console.error("Failed to load word:", error);
-        navigate("/");
+        console.error('Failed to load word:', error);
+        navigate('/');
       }
     };
     initGame();
   }, [category, navigate]);
 
+  // Timer for speed mode
+  useEffect(() => {
+    if (!timerActive || mode !== 'speed') return;
+
+    const timer = setInterval(() => {
+      setTimeElapsed((t) => {
+        if (t >= 300) {
+          // 5 minutes
+          setGameLost(true);
+          setTimerActive(false);
+          return t;
+        }
+        return t + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timerActive, mode]);
+
   const handleGuess = async () => {
     if (!word) return;
+    if (gameLost || gameWon) return;
     if (currentGuess.length !== 5) {
-      setMessage("Word must be 5 letters");
-      setTimeout(() => setMessage(""), 2000);
+      setMessage('Word must be 5 letters');
+      setTimeout(() => setMessage(''), 2000);
       return;
     }
 
-    const newGuesses = [...guesses, currentGuess];
+    if (!isValidWord(currentGuess)) {
+      setMessage('Not in word list');
+      setTimeout(() => setMessage(''), 2000);
+      return;
+    }
+
+    const result = evaluateGuess(currentGuess, word.word);
+    const newGuesses = [...guesses, { word: currentGuess, result }];
     setGuesses(newGuesses);
-    setCurrentGuess("");
+    setCurrentGuess('');
 
     const isCorrect = currentGuess.toUpperCase() === word.word.toUpperCase();
 
     if (isCorrect) {
       setGameWon(true);
+      setTimerActive(false);
+
+      const gameMode = mode as GameMode;
+      const difficulty = getDifficultyNumber(category || 'Easy');
       const coinsEarned = calculateCoinsEarned(
         newGuesses.length,
-        mode as GameMode,
-        getDifficultyNumber(category || "Easy"),
+        gameMode,
+        difficulty
       );
+
       addCoins(coinsEarned);
       incrementStreak();
 
       await addGameToHistory({
-        id: `${Date.now()}`,
+        id: `${Date.now()}-${Math.random()}`,
         word: word.word,
-        gameMode: mode as GameMode,
+        gameMode,
         category: word.category,
         won: true,
         guessCount: newGuesses.length,
-        timeElapsed: 0,
+        timeElapsed,
         coinsEarned,
-        difficulty: getDifficultyNumber(category || "Easy"),
+        difficulty,
         playedAt: Date.now(),
       });
     } else if (newGuesses.length >= 6) {
       setGameLost(true);
+      setTimerActive(false);
+
+      const gameMode = mode as GameMode;
+      const difficulty = getDifficultyNumber(category || 'Easy');
+
       await addGameToHistory({
-        id: `${Date.now()}`,
+        id: `${Date.now()}-${Math.random()}`,
         word: word.word,
-        gameMode: mode as GameMode,
+        gameMode,
         category: word.category,
         won: false,
         guessCount: newGuesses.length,
-        timeElapsed: 0,
+        timeElapsed,
         coinsEarned: 0,
-        difficulty: getDifficultyNumber(category || "Easy"),
+        difficulty,
         playedAt: Date.now(),
       });
     }
+  };
+
+  const handleRevealLetter = () => {
+    if (!word || mode === 'hardcore' || hintsRemaining.reveal === 0) return;
+    if (!spendCoins(5)) {
+      setMessage('Not enough coins (need 5)!');
+      setTimeout(() => setMessage(''), 2000);
+      return;
+    }
+
+    const revealedIndices = new Set(
+      guesses
+        .flatMap((g, i) =>
+          g.result.map((r, j) => (r === 'correct' ? j : -1))
+        )
+        .filter((j) => j !== -1)
+    );
+
+    let unrevealedIndex = -1;
+    for (let i = 0; i < word.word.length; i++) {
+      if (!revealedIndices.has(i)) {
+        unrevealedIndex = i;
+        break;
+      }
+    }
+
+    if (unrevealedIndex !== -1) {
+      const hint = word.word[unrevealedIndex];
+      setMessage(`Letter ${unrevealedIndex + 1}: ${hint}`);
+      setHintsRemaining((h) => ({ ...h, reveal: h.reveal - 1 }));
+    }
+  };
+
+  const handleRevealPosition = () => {
+    if (!word || mode === 'hardcore' || hintsRemaining.position === 0) return;
+    if (!spendCoins(10)) {
+      setMessage('Not enough coins (need 10)!');
+      setTimeout(() => setMessage(''), 2000);
+      return;
+    }
+
+    const correctLetters = word.word.split('');
+    const revealedPositions = guesses
+      .flatMap((g, i) =>
+        g.result.map((r, j) => (r === 'correct' ? j : -1))
+      )
+      .filter((j) => j !== -1);
+
+    const unrevealedPositions = correctLetters
+      .map((_, i) => (!revealedPositions.includes(i) ? i : -1))
+      .filter((i) => i !== -1);
+
+    if (unrevealedPositions.length > 0) {
+      const idx =
+        unrevealedPositions[
+          Math.floor(Math.random() * unrevealedPositions.length)
+        ];
+      setMessage(`Position ${idx + 1}: ${word.word[idx]}`);
+      setHintsRemaining((h) => ({ ...h, position: h.position - 1 }));
+    }
+  };
+
+  const handleEliminateLetters = () => {
+    if (!word || mode === 'hardcore' || hintsRemaining.eliminate === 0) return;
+    if (!spendCoins(8)) {
+      setMessage('Not enough coins (need 8)!');
+      setTimeout(() => setMessage(''), 2000);
+      return;
+    }
+
+    const wordLetters = new Set(word.word.toUpperCase());
+    const guessedLetters = new Set(
+      guesses.flatMap((g) => g.word.toUpperCase())
+    );
+
+    const wrongNotGuessed = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+      .split('')
+      .filter((l) => !wordLetters.has(l) && !guessedLetters.has(l));
+
+    const toEliminate = wrongNotGuessed.slice(0, 3).join(', ');
+    setMessage(`Not in word: ${toEliminate || 'None new'}`);
+    setHintsRemaining((h) => ({ ...h, eliminate: h.eliminate - 1 }));
   };
 
   if (!word) {
@@ -98,16 +228,27 @@ export function GameComponent() {
     );
   }
 
+  const gameMode = mode as GameMode;
+  const timeRemaining = 300 - timeElapsed;
+
   return (
     <div className={styles.game}>
       <header className={styles.gameHeader}>
-        <button onClick={() => navigate("/")} className={styles.backButton}>
+        <button onClick={() => navigate('/')} className={styles.backButton}>
           ← Back
         </button>
         <h2>
-          {category} - {mode && mode.charAt(0).toUpperCase() + mode.slice(1)}
+          {category} - {gameMode.charAt(0).toUpperCase() + gameMode.slice(1)}
         </h2>
-        <div></div>
+        <div className={styles.headerStats}>
+          <span>💰 {coins}</span>
+          {gameMode === 'speed' && (
+            <span className={styles.timer}>
+              {Math.floor(timeRemaining / 60)}:
+              {(timeRemaining % 60).toString().padStart(2, '0')}
+            </span>
+          )}
+        </div>
       </header>
 
       <main className={styles.gameMain}>
@@ -115,13 +256,19 @@ export function GameComponent() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className={styles.guessRow}>
               {guesses[i]
-                ? guesses[i].split("").map((letter, j) => (
-                    <div key={j} className={styles.letter}>
-                      {letter.toUpperCase()}
-                    </div>
-                  ))
+                ? guesses[i].word.split('').map((letter, j) => {
+                    const result = guesses[i].result[j];
+                    return (
+                      <div
+                        key={j}
+                        className={`${styles.letter} ${styles[result]}`}
+                      >
+                        {letter.toUpperCase()}
+                      </div>
+                    );
+                  })
                 : i === guesses.length
-                  ? currentGuess.split("").map((letter, j) => (
+                  ? currentGuess.split('').map((letter, j) => (
                       <div key={j} className={styles.letter}>
                         {letter.toUpperCase()}
                       </div>
@@ -132,20 +279,45 @@ export function GameComponent() {
         </div>
 
         {!gameWon && !gameLost && (
-          <div className={styles.input}>
-            <input
-              type="text"
-              maxLength={5}
-              value={currentGuess}
-              onChange={(e) => setCurrentGuess(e.target.value.toUpperCase())}
-              onKeyDown={(e) => e.key === "Enter" && handleGuess()}
-              placeholder="Type 5 letters..."
-              autoFocus
-            />
-            <button onClick={handleGuess} className={styles.submitButton}>
-              Submit
-            </button>
-          </div>
+          <>
+            <div className={styles.input}>
+              <input
+                type="text"
+                maxLength={5}
+                value={currentGuess}
+                onChange={(e) => setCurrentGuess(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleGuess()}
+                placeholder="Type 5 letters..."
+                autoFocus
+              />
+              <button onClick={handleGuess} className={styles.submitButton}>
+                Submit
+              </button>
+            </div>
+
+            {gameMode !== 'hardcore' && (
+              <div className={styles.hints}>
+                <button
+                  onClick={handleRevealLetter}
+                  disabled={hintsRemaining.reveal === 0}
+                >
+                  Reveal Letter (5💰) {hintsRemaining.reveal}
+                </button>
+                <button
+                  onClick={handleRevealPosition}
+                  disabled={hintsRemaining.position === 0}
+                >
+                  Reveal Position (10💰) {hintsRemaining.position}
+                </button>
+                <button
+                  onClick={handleEliminateLetters}
+                  disabled={hintsRemaining.eliminate === 0}
+                >
+                  Eliminate Letters (8💰) {hintsRemaining.eliminate}
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {message && <div className={styles.message}>{message}</div>}
@@ -154,7 +326,7 @@ export function GameComponent() {
           <div className={styles.result}>
             <h3>🎉 You Won!</h3>
             <p>Guesses: {guesses.length}/6</p>
-            <button onClick={() => navigate("/")} className={styles.nextButton}>
+            <button onClick={() => navigate('/')} className={styles.nextButton}>
               Play Again
             </button>
           </div>
@@ -163,8 +335,10 @@ export function GameComponent() {
         {gameLost && (
           <div className={styles.result}>
             <h3>😢 Game Over</h3>
-            <p>The word was: {word.word}</p>
-            <button onClick={() => navigate("/")} className={styles.nextButton}>
+            <p>
+              The word was: <strong>{word.word}</strong>
+            </p>
+            <button onClick={() => navigate('/')} className={styles.nextButton}>
               Back to Menu
             </button>
           </div>
