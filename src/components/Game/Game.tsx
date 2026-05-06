@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import type { Word, GameMode, Guess } from "@/types";
 import { getRandomWord, isWordInDictionary } from "@/services/storage/wordsDB";
 import { addGameToHistory } from "@/services/storage/gameHistoryDB";
@@ -13,9 +13,16 @@ import {
 import { localStorageService } from "@/services/storage/localStorageService";
 import styles from "./Game.module.css";
 
+function decodeChallengeWord(token: string): string {
+  const normalized = token.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+  return atob(padded).toUpperCase();
+}
+
 export function GameComponent() {
   const KEYBOARD_ROWS = ["QWERTYUIOP", "ASDFGHJKL", "ZXCVBNM"];
   const { category, mode } = useParams<{ category: string; mode: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const { addCoins, coins, spendCoins } = useCoins();
   const { incrementStreak } = useStreak();
@@ -33,10 +40,37 @@ export function GameComponent() {
   });
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [timerActive, setTimerActive] = useState(true);
+  const [isChallenge, setIsChallenge] = useState(false);
 
   useEffect(() => {
     const initGame = async () => {
       try {
+        const challengeToken = new URLSearchParams(location.search).get(
+          "challenge",
+        );
+
+        if (challengeToken) {
+          const challengeWord = decodeChallengeWord(challengeToken);
+
+          if (!/^[A-Z]{5}$/.test(challengeWord)) {
+            throw new Error("Invalid challenge word");
+          }
+
+          setIsChallenge(true);
+          setWord({
+            id: `challenge-${challengeWord}`,
+            word: challengeWord,
+            category: category as Word["category"],
+            length: challengeWord.length,
+            liked: false,
+            addedAt: Date.now(),
+            isCustom: true,
+          });
+          localStorageService.setLastPlayedAt(Date.now());
+          return;
+        }
+
+        setIsChallenge(false);
         const randomWord = await getRandomWord(category as Word["category"]);
         setWord(randomWord);
         localStorageService.setLastPlayedAt(Date.now());
@@ -46,7 +80,7 @@ export function GameComponent() {
       }
     };
     initGame();
-  }, [category, navigate]);
+  }, [category, location.search, navigate]);
 
   // Timer for speed mode
   useEffect(() => {
@@ -84,9 +118,10 @@ export function GameComponent() {
       return;
     }
 
-    // Strict dictionary check: unknown words are rejected.
     const existsInDictionary = await isWordInDictionary(normalizedGuess);
-    if (!existsInDictionary) {
+    const isExactChallengeAnswer =
+      isChallenge && normalizedGuess === word.word.toUpperCase();
+    if (!existsInDictionary && !isExactChallengeAnswer) {
       setMessage("Word not in dictionary");
       setTimeout(() => setMessage(""), 1800);
       return;
