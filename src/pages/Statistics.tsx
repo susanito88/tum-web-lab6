@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStatistics } from "@/services/storage/gameHistoryDB";
+import { getStatisticsAPI } from "@/services/storage/gameHistoryAPI";
 import type { GameMode, Statistics as StatsType } from "@/types";
 import {
   BarChart,
@@ -27,7 +28,17 @@ export function Statistics() {
       try {
         const mode =
           selectedMode === "all" ? undefined : (selectedMode as GameMode);
-        const data = await getStatistics(mode);
+        
+        let data: StatsType | null = null;
+        try {
+          // Try API first
+          data = await getStatisticsAPI();
+        } catch (apiError) {
+          console.warn("API not available, falling back to local storage:", apiError);
+          // Fall back to local storage
+          data = await getStatistics(mode);
+        }
+        
         setStats(data);
       } catch (error) {
         console.error("Failed to load statistics:", error);

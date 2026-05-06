@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import type { Word, GameMode, Guess } from "@/types";
 import { getRandomWord, isWordInDictionary } from "@/services/storage/wordsDB";
 import { addGameToHistory } from "@/services/storage/gameHistoryDB";
+import { addGameToHistoryAPI } from "@/services/storage/gameHistoryAPI";
 import { useCoins, useStreak } from "@/hooks/useCoins";
 import {
   evaluateGuess,
@@ -153,7 +154,7 @@ export function GameComponent() {
       addCoins(coinsEarned);
       incrementStreak();
 
-      await addGameToHistory({
+      const historyEntry = {
         word: word.word,
         gameMode,
         category: word.category,
@@ -163,7 +164,18 @@ export function GameComponent() {
         coinsEarned,
         difficulty,
         playedAt: Date.now(),
-      });
+      };
+
+      // Save to local storage
+      await addGameToHistory(historyEntry);
+      
+      // Try to save to API
+      try {
+        await addGameToHistoryAPI(historyEntry, newGuesses.map((g) => g.word));
+      } catch (error) {
+        console.warn("Failed to save game to backend:", error);
+        // Continue anyway as it's saved locally
+      }
     } else if (newGuesses.length >= 6) {
       setGameLost(true);
       setTimerActive(false);
@@ -171,7 +183,7 @@ export function GameComponent() {
       const gameMode = mode as GameMode;
       const difficulty = getDifficultyNumber(category || "Easy");
 
-      await addGameToHistory({
+      const historyEntry = {
         word: word.word,
         gameMode,
         category: word.category,
@@ -181,7 +193,18 @@ export function GameComponent() {
         coinsEarned: 0,
         difficulty,
         playedAt: Date.now(),
-      });
+      };
+
+      // Save to local storage
+      await addGameToHistory(historyEntry);
+      
+      // Try to save to API
+      try {
+        await addGameToHistoryAPI(historyEntry, newGuesses.map((g) => g.word));
+      } catch (error) {
+        console.warn("Failed to save game to backend:", error);
+        // Continue anyway as it's saved locally
+      }
     }
   };
 
